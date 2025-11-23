@@ -62,7 +62,7 @@ class ResBlockUp(nn.Module):
 #       ResNet Generator 256×256
 # -----------------------------------------
 class GeneratorResNet(nn.Module):
-    def __init__(self, z_dim = opt.latent_dim , cond_dim=opt.n_classes, img_channels=3):
+    def __init__(self, z_dim = 100 , cond_dim=72, img_channels=3):
         super().__init__()
 
         #self.init_size = opt.img_size  
@@ -133,40 +133,21 @@ class DiscriminatorU(nn.Module):
         )
 
         self.fc_img = nn.Sequential(
-            nn.Linear(8*8*4, opt.n_classes),
+            nn.Linear(8*8*4, 72), ### CHECK THIS
             nn.LeakyReLU(0.2)
         )
 
-        #self.fc_cond = nn.Sequential(
-        #    nn.Linear(opt.n_classes, 64),
-        #    nn.LeakyReLU(0.2)
-        #)
-
         self.adv_layer = nn.Sequential(
-            nn.Linear(2*opt.n_classes,64),
+            nn.Linear(2*72,64),
             nn.LeakyReLU(0.2, inplace=True),
             nn.Linear(64, 1)
         )
 
-        # Adversarial layer with HxW output
-        #self.adv_layer = nn.Sequential(
-        #      nn.Linear(128 * ds_size ** 2 + opt.n_classes, 1),
-              #nn.Conv2d(2*opt.n_classes, 1, 3, padding=1, bias=True)
-        #      nn.Sigmoid()
-        #    )
     def forward(self, img, cond):
         out = self.model(img)
         #cond_emb = self.fc_cond(cond)
         out_emb = self.fc_img(out.view(out.shape[0],-1))
-        #out = out.view(out.shape[0], -1)
-        #d_in = torch.cat((out.view(out.size(0), -1), self.cond_emb(cond)), -1)
-        #d_in = torch.cat((out.view(out.size(0), -1), cond), -1)
-        #validity = self.adv_layer(d_in)
-        #condw = cond.view(cond.shape[0],cond.shape[1],1,1)
-        #cond2d = condw*torch.ones(out.shape[0],opt.n_classes,out.shape[2],out.shape[3]).cuda()
-        #diff = torch.square(cond - out_emb)
         d_in = torch.cat((out_emb,cond),1)
-        #validity = self.adv_layer(d_in)
         validity = self.adv_layer(d_in)
         return validity
 
@@ -218,8 +199,8 @@ class GeneratorUNet(nn.Module):
         super(GeneratorUNet, self).__init__()
         
         # Init size and gen from latent var
-        self.init_size = opt.img_size  # init image size could be set to 64
-        self.l1 = nn.Sequential(nn.Linear(opt.latent_dim + opt.n_classes, 16 * self.init_size ** 2))
+        self.init_size = 64  # init image size could be set to 64
+        self.l1 = nn.Sequential(nn.Linear(100 + 72, 16 * self.init_size ** 2))
 
         # Upsample the original latent feats (x4)
         self.upsample_layer = nn.Sequential(
@@ -238,9 +219,7 @@ class GeneratorUNet(nn.Module):
         self.down4 = UNetDown(256, 512, dropout=0.5)
         self.down5 = UNetDown(512, 512, dropout=0.5)
         self.down6 = UNetDown(512, 512, dropout=0.5)
-        #self.down7 = UNetDown(512, 512, dropout=0.5)
         self.down7 = UNetDown(512, 256, normalize=False, dropout=0.5)
-        #self.down8 = UNetDown(512, 512, normalize=False, dropout=0.5)
         
         self.up1 = UNetUp(256, 512, dropout=0.5)
         self.up2 = UNetUp(1024, 512, dropout=0.5)
