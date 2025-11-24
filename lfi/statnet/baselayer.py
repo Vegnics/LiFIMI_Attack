@@ -1,3 +1,7 @@
+import torch
+import torch.nn as nn
+import torch.nn.functional as F 
+
 
 ##  Used for the Score-Matching statistic net
 class ScoreLayer(nn.Module): 
@@ -70,6 +74,7 @@ class EncodeLayer(nn.Module):
                  nn.ReLU(),
                  nn.Conv1d(in_channels=50, out_channels=architecture[1], kernel_size=3, stride=1),
             )
+        # Change this summary statistics, it is too shallow
         if self.type == 'cnn2d':
             self.cnn2d = nn.Sequential(
                  nn.Conv2d(in_channels=1, out_channels=50, kernel_size=2, stride=1),

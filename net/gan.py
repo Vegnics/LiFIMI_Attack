@@ -24,6 +24,10 @@ def weights_init_normal(m):
         torch.nn.init.constant_(m.bias.data, 0.0)
 
 
+# -----------------------------------------
+#       ResNet Generator 256×256
+# -----------------------------------------
+
 class ResBlockUp(nn.Module):
     def __init__(self, in_ch, out_ch):
         super().__init__()
@@ -58,9 +62,7 @@ class ResBlockUp(nn.Module):
         return x + shortcut
 
 
-# -----------------------------------------
-#       ResNet Generator 256×256
-# -----------------------------------------
+
 class GeneratorResNet(nn.Module):
     def __init__(self, z_dim = 100 , cond_dim=72, img_channels=3):
         super().__init__()
@@ -125,10 +127,6 @@ class DiscriminatorU(nn.Module):
             *discriminator_block(256, 128),
             *discriminator_block(128, 64),
             nn.ZeroPad2d((1, 0, 1, 0)),
-            #nn.Conv2d(512, 1, 4, padding=1, bias=False)
-            #nn.Conv2d(128, 64, 4, padding=1),
-            #nn.LeakyReLU(0.2, inplace=True),
-            #nn.Dropout2d(0.15),
             nn.Conv2d(64, 4, 4, padding=1, bias=False)
         )
 
@@ -155,7 +153,7 @@ class DiscriminatorU(nn.Module):
 #--------------------------------------------------------------------
 
 ##############################
-#           U-NET
+#       U-NET Generator
 ##############################
 
 
@@ -261,10 +259,10 @@ class GeneratorUNet(nn.Module):
 
 #--------------------------------------------------------------------
 
+# ------------------------------
+#      BigGan GENERATOR
+# ------------------------------
 
-# ------------------------------
-#   CONDITIONAL BATCHNORM
-# ------------------------------
 class ConditionalBatchNorm2d(nn.Module):
     def __init__(self, num_features, cond_dim):
         super().__init__()
@@ -279,9 +277,6 @@ class ConditionalBatchNorm2d(nn.Module):
         return out * (1 + gamma) + beta
 
 
-# ------------------------------
-#       GENERATOR BLOCK
-# ------------------------------
 class GBlock(nn.Module):
     def __init__(self, in_ch, out_ch, cond_dim, upsample=True):
         super().__init__()
@@ -321,9 +316,6 @@ class GBlock(nn.Module):
         return sc + h
 
 
-# ------------------------------
-#      TINY GENERATOR
-# ------------------------------
 class TinyBigGANGenerator(nn.Module):
     def __init__(self, z_dim=100, cond_dim=72, img_channels=3):
         super().__init__()
@@ -433,3 +425,122 @@ class TinyBigGANDiscriminator(nn.Module):
         proj = (h * self.embed_y(cond)).sum(dim=1, keepdim=True)
 
         return out_uncond + proj   # raw logits
+
+
+
+######################################################
+### dcGAN taken from Github, adapted to the project
+######################################################
+
+class DiscriminatorE(nn.Module):
+    def __init__(self, img_channels=3, cond_dim=72):
+        super().__init__()
+
+        # cond (72-dim) → 1×256×256 map
+        self.label_embed = nn.Sequential(
+            nn.Linear(cond_dim, 256 * 256),
+            nn.LeakyReLU(0.2, inplace=True)
+        )
+
+        in_channels = img_channels + 1  # 3 (image) + 1 (cond map) = 4
+
+        # 256 → 128 → 64 → 32 → 16 → 8 → 4
+        self.main = nn.Sequential(
+            # 256x256 → 128x128
+            spectral_norm(nn.Conv2d(in_channels, 64, 4, 2, 1)),
+            nn.LeakyReLU(0.2, inplace=True),
+
+            # 128x128 → 64x64
+            spectral_norm(nn.Conv2d(64, 128, 4, 2, 1)),
+            nn.LeakyReLU(0.2, inplace=True),
+
+            # 64x64 → 32x32
+            spectral_norm(nn.Conv2d(128, 256, 4, 2, 1)),
+            nn.LeakyReLU(0.2, inplace=True),
+
+            # 32x32 → 16x16
+            spectral_norm(nn.Conv2d(256, 256, 4, 2, 1)),
+            nn.LeakyReLU(0.2, inplace=True),
+
+            # 16x16 → 8x8
+            spectral_norm(nn.Conv2d(256, 512, 4, 2, 1)),
+            nn.LeakyReLU(0.2, inplace=True),
+
+            # 8x8 → 4x4
+            spectral_norm(nn.Conv2d(512, 512, 4, 2, 1)),
+            nn.LeakyReLU(0.2, inplace=True),
+        )
+
+        self.flatten = nn.Flatten()
+        self.out = spectral_norm(nn.Linear(512 * 4 * 4, 1))  # hinge logit
+
+    def forward(self, images, cond):
+        # cond → spatial map
+        cond_map = self.label_embed(cond)                      # (B, 256*256)
+        cond_map = cond_map.view(cond.size(0), 1, 256, 256)    # (B,1,256,256)
+
+        x = torch.cat([images, cond_map], dim=1)               # (B,4,256,256)
+        h = self.main(x)                                       # (B,512,4,4)
+        h = self.flatten(h)                                    # (B,512*4*4)
+        logits = self.out(h)                                   # (B,1)
+        return logits
+
+
+
+class GeneratorE(nn.Module):
+    def __init__(self, z_dim=100, cond_dim=72, img_channels=3):
+        super().__init__()
+
+        self.z_dim = z_dim
+        self.cond_dim = cond_dim
+
+        in_dim = z_dim + cond_dim
+
+        # Start from 4x4 with 256 channels
+        self.fc = nn.Sequential(
+            nn.Linear(in_dim, 256 * 4 * 4),
+            nn.ReLU(True)
+        )
+
+        self.main = nn.Sequential(
+            # 4x4 → 8x8
+            nn.ConvTranspose2d(256, 256, 4, 2, 1),
+            nn.BatchNorm2d(256),
+            nn.ReLU(True),
+
+            # 8x8 → 16x16
+            nn.ConvTranspose2d(256, 256, 4, 2, 1),
+            nn.BatchNorm2d(256),
+            nn.ReLU(True),
+
+            # 16x16 → 32x32
+            nn.ConvTranspose2d(256, 128, 4, 2, 1),
+            nn.BatchNorm2d(128),
+            nn.ReLU(True),
+
+            # 32x32 → 64x64
+            nn.ConvTranspose2d(128, 64, 4, 2, 1),
+            nn.BatchNorm2d(64),
+            nn.ReLU(True),
+
+            # 64x64 → 128x128
+            nn.ConvTranspose2d(64, 32, 4, 2, 1),
+            nn.BatchNorm2d(32),
+            nn.ReLU(True),
+
+            # 128x128 → 256x256
+            nn.ConvTranspose2d(32, 16, 4, 2, 1),
+            nn.BatchNorm2d(16),
+            nn.ReLU(True),
+
+            # final conv to RGB
+            nn.Conv2d(16, img_channels, 3, padding=1),
+            nn.Sigmoid()   # data in [0,1]
+        )
+
+    def forward(self, z, cond):
+        x = torch.cat([z, cond], dim=1)             # (B, z_dim+cond_dim)
+        x = self.fc(x)                              # (B, 256*4*4)
+        x = x.view(x.size(0), 256, 4, 4)            # (B,256,4,4)
+        img = self.main(x)                          # (B,3,256,256)
+        return img
