@@ -55,7 +55,7 @@ class Gaussian_Copula_Problem(ABC_problems.ABC_Problem):
 
     # B. correlation between latent
     def _ss_corr(self, Z):
-        V = np.mat(Z).T * np.mat(Z) / Z.shape[0]
+        V = np.asmatrix(Z).T * np.asmatrix(Z) / Z.shape[0]
         (d,d) = V.shape
         upper_tri_elements = V[np.triu_indices(d, k=1)]
         stat = np.array(upper_tri_elements)

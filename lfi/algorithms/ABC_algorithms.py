@@ -76,7 +76,7 @@ class Base_ABC(object):
         Saves the result_data of this algorithm.
         Note: Should be called after a call to `run()`
         '''
-        utils_os.save_algorithm(self.save_dir, self)
+        uos.save_algorithm(self.save_dir, self)
 
     def whiten(self, x):
 
@@ -127,8 +127,8 @@ class Base_ABC(object):
         self.mean = mean
 
         # Save results
-        utils_os.save_object(self.save_dir, 'pilot_run_whiten_cov.npy', self.COV)
-        utils_os.save_object(self.save_dir, 'pilot_run_whiten_mean.npy', self.mean)
+        uos.save_object(self.save_dir, 'pilot_run_whiten_cov.npy', self.COV)
+        uos.save_object(self.save_dir, 'pilot_run_whiten_mean.npy', self.mean)
         
         # Recover settings
         self.hyperparams.whiten = whiten
@@ -154,7 +154,7 @@ class Base_ABC(object):
         self.discrepancies = discrepancies
 
         # Save results
-        utils_os.save_object(self.save_dir, 'pilot_run_epsilon.npy', discrepancies)
+        uos.save_object(self.save_dir, 'pilot_run_epsilon.npy', discrepancies)
         
         # Recover settings
         self.num_sim = num_sim
@@ -163,11 +163,11 @@ class Base_ABC(object):
 
         # > pilot run that determines (a) the scale of summary stat (b) the range of epsilon
         
-        if utils_os.is_file_exist(self.save_dir, 'pilot_run_epsilon.npy'):
+        if uos.is_file_exist(self.save_dir, 'pilot_run_epsilon.npy'):
             print('[ABC] already completed pilot run')
-            self.mean = utils_os.load_object(self.save_dir, 'pilot_run_whiten_mean.npy')
-            self.COV = utils_os.load_object(self.save_dir, 'pilot_run_whiten_cov.npy')
-            self.discrepancies = utils_os.load_object(self.save_dir, 'pilot_run_epsilon.npy')
+            self.mean = uos.load_object(self.save_dir, 'pilot_run_whiten_mean.npy')
+            self.COV = uos.load_object(self.save_dir, 'pilot_run_whiten_cov.npy')
+            self.discrepancies = uos.load_object(self.save_dir, 'pilot_run_epsilon.npy')
             return
         else:
             print('[ABC] running pilot run')
@@ -190,7 +190,7 @@ class Base_ABC(object):
         num_samples_per_proc = int(self.num_sim/N_proc)                                                                                                                                                                                
         for k in range(N_proc): params.append([num_budget_per_proc, num_samples_per_proc, k])
         func = self._simulate
-        rets = utils_os.run_in_parallel(func, params, N_proc)
+        rets = uos.run_in_parallel(func, params, N_proc)
         
         # Concatenate the results
         for k in range(N_proc):
