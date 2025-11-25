@@ -6,9 +6,10 @@ import numpy as np
 import scipy
 import math
 import time
-from utils import optimizer
-from baselayer import *
 from copy import deepcopy
+
+from utils import optimizer
+from baselayer import CriticLayer,ScoreLayer
 
 
 class ISN(nn.Module):
@@ -126,3 +127,44 @@ class MSN(nn.Module):
     def learn(self, x, y):
         loss_value = optimizer.NNOptimizer.learn(self, x, y)
         return loss_value
+
+
+class SSN(nn.Module):
+    """ 
+        Score-matching Statistic Network
+    """
+    def __init__(self, architecture, dim_y, hyperparams):
+        super().__init__()
+        self.bs = 400 if not hasattr(hyperparams, 'bs') else hyperparams.bs 
+        self.lr = 1e-3 if not hasattr(hyperparams, 'lr') else hyperparams.lr
+        self.wd = 0e-5 if not hasattr(hyperparams, 'wd') else hyperparams.wd
+        self.type = 'plain' if not hasattr(hyperparams, 'type') else hyperparams.type 
+        self.dropout = False if not hasattr(hyperparams, 'dropout') else hyperparams.dropout 
+        
+        self.score_layer = ScoreLayer(architecture[-1], dim_y, 100, n_layer=1)
+        self.encode_layer = EncodeLayer(architecture, dim_y, hyperparams)
+
+    def encode(self, x):
+        # s = s(x), get the summary statistic of x
+        return self.encode_layer(x)
+        
+    def SM(self, x, y):
+        n, dim = y.size()
+        x = x.clone().requires_grad_(True)
+        y = y.clone().requires_grad_(True)
+        log_energy = self.score_layer(x, y)                                    # log f(y|x), R^d                m*1
+        score = autograd.grad(log_energy.sum(), y, create_graph=True)[0]       # d_y log f(y|x),                m*d
+        loss1 = 0.5*torch.norm(score, dim=1) ** 2                              # |d_y|^2                        m*1
+        loss2 = torch.zeros(n, device=x.device)                                # trace d_yy log f(y|x)          m*1
+        for d in range(dim): 
+            loss2 += autograd.grad(score[:, d].sum(), y, create_graph=True, retain_graph=True)[0][:, d] 
+        loss = loss1 + loss2
+        return loss.mean()
+    
+    def objective_func(self, x, y):
+        loss = self.SM(self.encode(x), y)
+        return -loss
+        
+    def learn(self, x, y):
+        loss_value = optimizer.NNOptimizer.learn(self, x, y)
+        return loss_value   

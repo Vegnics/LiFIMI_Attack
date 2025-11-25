@@ -1,4 +1,4 @@
-# Implementation of the LFI algorithms
+# Implementation of the LFI algorithms for DNN attack
 
 
 

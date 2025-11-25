@@ -5,8 +5,10 @@ import torch.distributions as distribution
 import math
 import numpy as np
 import time
-import optimizer
 from copy import deepcopy
+
+from utils import optimizer
+
 
 
 class MAF(nn.Sequential):

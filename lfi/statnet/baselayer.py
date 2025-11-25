@@ -50,7 +50,33 @@ class CriticLayer(nn.Module):
         out = self.out(h)
         return out 
     
-    
+
+class ResBlockUp(nn.Module):
+    def __init__(self, in_ch, out_ch):
+        super().__init__()
+
+        # Input simple rescaling
+        self.upscale = nn.Upsample(scale_factor=2, mode='nearest')
+        
+        # Output upsample via deconvolution
+        self.upsample = nn.ConvTranspose2d(out_ch,out_ch,kernel_size=4,stride=2,padding=1) #nn.Upsample(scale_factor=2, mode='nearest')
+
+        self.conv1 = nn.Conv2d(in_ch, out_ch, 3, padding=1)
+        self.conv2 = nn.Conv2d(out_ch, out_ch, 3, padding=1)
+        self.bn1 = nn.BatchNorm2d(in_ch)
+        self.bn2 = nn.BatchNorm2d(out_ch)
+        self.bn3 = nn.BatchNorm2d(out_ch)
+
+        self.shortcut = nn.Conv2d(in_ch, out_ch, 1)
+
+    def forward(self, x):
+        shortcut = self.shortcut(self.upscale(x))
+        #x = self.upsample(x)
+        x = self.conv1(F.relu(self.bn1(x)))
+        x = self.conv2(F.relu(self.bn2(x)))
+        x = self.upsample(F.relu(self.bn3(x)))
+        #return F.relu(x + shortcut)
+        return x + shortcut  
         
 class EncodeLayer(nn.Module):
     def __init__(self, architecture, dim_y, hyperparams=None):
