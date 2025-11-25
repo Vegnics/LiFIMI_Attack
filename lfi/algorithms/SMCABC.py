@@ -5,10 +5,10 @@ import os, sys, time, math
 import scipy.stats as stats
 import matplotlib.pyplot as plt
 
-from utils import umath, uos
-from utils import distributions
-from utils import discrepancy
-import algorithms.ABC_algorithms as ABC_algorithms
+from lfi.utils import umath, uos
+from lfi.utils import distributions
+from lfi.utils import discrepancy
+from lfi.algorithms import ABC_algorithms
 
 
 class SMC_ABC(ABC_algorithms.Base_ABC):

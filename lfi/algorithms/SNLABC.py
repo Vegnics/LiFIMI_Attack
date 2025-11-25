@@ -10,8 +10,8 @@ from copy import deepcopy
 from lfi.utils import umath, uos
 from lfi.utils import distributions
 from lfi.utils import discrepancy
-import algorithms.ABC_algorithms as ABC_algorithms
 from lfi.neuralde import MAF,MDN
+from lfi.algorithms import ABC_algorithms
 
 
 
