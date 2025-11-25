@@ -2,8 +2,8 @@ import numpy as np
 import math
 from abc import ABCMeta, abstractmethod
 
-from utils import distributions
-from utils import uos, umath
+from lfi.utils import distributions
+from lfi.utils import uos, umath
 
 class ABC_Problem(object):
 

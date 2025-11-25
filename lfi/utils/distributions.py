@@ -7,7 +7,8 @@ from scipy import stats
 import scipy.special as special
 from scipy.stats import binom
 from scipy.stats import norm
-import umath
+
+from lfi.utils import umath
 
 
 

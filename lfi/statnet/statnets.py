@@ -8,8 +8,8 @@ import math
 import time
 from copy import deepcopy
 
-from utils import optimizer
-from baselayer import CriticLayer,ScoreLayer
+from lfi.utils import optimizer
+from lfi.statnet.baselayer import CriticLayer,ScoreLayer
 
 
 class ISN(nn.Module):

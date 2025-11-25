@@ -6,9 +6,9 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 import time
 
-from utils import distributions 
-from utils import umath
-from problems import ABC_problems
+from lfi.utils import distributions 
+from lfi.utils import umath
+from lfi.detsimul import ABC_problems
 
 
 class OP_Problem(ABC_problems.ABC_Problem):
