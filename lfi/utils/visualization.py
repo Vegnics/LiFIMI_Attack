@@ -3,8 +3,8 @@ import scipy.stats as stats
 import matplotlib.pyplot as plt
 import time
 
-import umath, uos
-import discrepancy
+from lfi.utils import umath, uos
+from lfi.utils import discrepancy
 
 
 
