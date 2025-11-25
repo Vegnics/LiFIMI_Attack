@@ -31,7 +31,7 @@ class CriticLayer(nn.Module):
         super().__init__()       
         dim_x, dim_y, dim_hidden = architecture[-1], dim_y, 200
         # WD case; need to do spectral normalization
-        if hyperparams.estimator is 'WD':
+        if hyperparams.estimator == 'WD':
             self.main = nn.Sequential(
                 nn.utils.spectral_norm(nn.Linear(dim_x + dim_y, dim_hidden), n_power_iterations=5),
             )
