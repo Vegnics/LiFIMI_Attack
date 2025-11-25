@@ -7,7 +7,7 @@ import numpy as np
 import time
 from copy import deepcopy
 
-from utils import optimizer
+from lfi.utils import optimizer
 
 
 
