@@ -6,9 +6,9 @@ import os, sys, time, math
 import scipy.stats as stats
 import matplotlib.pyplot as plt
 
-import utils_math, utils_os
-import distributions
-import discrepancy
+from utils import umath, uos
+from utils import distributions
+from utils import discrepancy
 import algorithms.ABC_algorithms as ABC_algorithms
 import algorithms.SMCABC as SMCABC
 

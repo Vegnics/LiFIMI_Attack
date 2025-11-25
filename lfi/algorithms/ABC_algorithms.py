@@ -5,9 +5,9 @@ import os, sys, time, math
 import scipy.stats as stats
 import matplotlib.pyplot as plt
 
-import utils_math, utils_os
-import distributions
-import discrepancy
+from lfi.utils import umath, uos
+from lfi.utils import distributions
+from lfi.utils import discrepancy
 
 
 

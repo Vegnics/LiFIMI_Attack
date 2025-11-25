@@ -5,14 +5,14 @@ import torch
 import os, sys, time, math
 import scipy.stats as stats
 import matplotlib.pyplot as plt
-
-import utils_math, utils_os
-import distributions
-import discrepancy
-import algorithms.ABC_algorithms as ABC_algorithms
-from nn import ISN, MSN, SSN
-from nde import MAF, MDN
 from copy import deepcopy
+
+from lfi.utils import umath, uos
+from lfi.utils import distributions
+from lfi.utils import discrepancy
+import algorithms.ABC_algorithms as ABC_algorithms
+from lfi.statnet import ISN, MSN, SSN
+from lfi.neuralde import MAF, MDN
 
 
 class SMC2_ABC(ABC_algorithms.Base_ABC):
