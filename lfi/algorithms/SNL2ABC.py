@@ -11,7 +11,7 @@ from lfi.utils import umath, uos
 from lfi.utils import distributions
 from lfi.utils import discrepancy
 from lfi.algorithms import ABC_algorithms
-from lfi.statnet import ISN, MSN, SSN
+from lfi.statnet.statnets import ISN, MSN, SSN
 from lfi.neuralde import MAF, MDN
 
 
