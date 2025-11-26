@@ -8,7 +8,7 @@ The diagram of the work by [Chen et al. (ICLR 2021)](https://openreview.net/pdf?
 
 ![PRORPRPRPRP](images/original.svg)
 
-**Group**
+**Group members**
 -----------------------------
 |Student|ID|Email|
 |-------|--|-----|
@@ -32,3 +32,6 @@ The diagram of the work by [Chen et al. (ICLR 2021)](https://openreview.net/pdf?
 2. Modify the existing Statnets (MLP) by using ResNet based, or others.
 3. Modify the critic networks by using conventional CNNs.
 4. Keep the same LFI algorithms, and perform the same experiments as in the original paper.
+---------------------
+
+## Getting started
