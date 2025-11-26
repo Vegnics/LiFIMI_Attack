@@ -1,0 +1,10 @@
+{
+    // Ignore F401 (Unused Imports) in Ruff
+    "ruff.lint.ignore": [
+        "F401"
+    ],
+    // Ignore F401 (Unused Imports) in Flake8 (if you use a Flake8 extension)
+    "python.linting.flake8Args": [
+        "--ignore=F401"
+    ]
+}

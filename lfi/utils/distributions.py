@@ -153,7 +153,7 @@ class normal_nd(object):
     def fit(x):
         [n, dim] = x.shape
         mu = np.mean(x, axis=0)
-        M = np.mat(x - mu)
+        M = np.asmatrix(x - mu)
         cov = np.matmul(M.T, M) / n
         return mu, cov
 
@@ -278,6 +278,9 @@ class MoG2(object):
 
     @staticmethod
     def learn_u2x_mappings(mu1, sigma1, mu2, sigma2):
+        """
+        Learn mappings from the CDF to a sample x (used by invcdf)
+        """
         coeff = 0
         u2x_mappings = []
         while coeff <= 1:
