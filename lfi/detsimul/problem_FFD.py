@@ -23,13 +23,14 @@ class FFD_Image_Problem(ABC_problems.ABC_Problem):
     def __init__(self,N=500,n=100,image_folder="",out_folder=""):
         self.simulator_args = ['mean', 'var']
         self.prior = [distributions.uniform, distributions.uniform]
-        self.prior_args = np.array([[-5.0, 0.5], [-15.0, 15.0]])
+        self.prior_args = np.array([[-5.0, 5.0], [0.001, 100.0]])
         self.true_mean = 0.0
         self.true_var = 1.0
         
         self.N = N
         self.n = n
         self.mudim = 72
+        self.K = 2
         self.img_folder = image_folder
         self.out_img_folder = out_folder
         self.ctrl_pnts = 6
@@ -154,13 +155,14 @@ class FFD_Image_Problem(ABC_problems.ABC_Problem):
         nmean = mean*np.ones(self.mudim)
         MU = distributions.normal_nd.draw_samples(nmean,cov,self.n)
         # Convert mu to x (images)
-        X = self.Z2X(MU)
-        return X
+        #X = self.Z2X(MU)
+        return MU
     
     def Z2X(self, Z):
         ndisp = Z.shape[0]
+        print(f"==== Warping===>{ndisp} samples")
         cnt = 1
-        images = []
+        ffds = []
         for fname in glob(self.img_folder+"/*.jpg"):
             img = cv2.imread(fname,1)
             for d in range(ndisp):
@@ -169,4 +171,134 @@ class FFD_Image_Problem(ABC_problems.ABC_Problem):
                 cv2.imwrite(os.path.join(self.out_img_folder,f"{cnt:05d}.jpg"),warped)
                 cnt += 1
         return self.out_img_folder
+    
+    def log_likelihood(self, theta):
+        '''
+        Calculate the log_likelihood of theta given y_obs.
+        log p(x_obs|theta)
+        
+        ----------
+        Parameters
+        ----------
+        theta : array
+            The array of parameters
+        Returns
+        -------
+        output : float
+            The likelihood value L(theta)
+        '''
+        mean = theta[0]*np.ones(self.mudim)
+        covar = theta[1]*np.diag(np.ones(self.mudim))
+        ## "Observed" Densities according to the original theta
+        densities = distributions.normal_nd.pdf(self.data_obs,mean,covar)
+        ll = np.log(densities+1e-10)
+        return ll.sum()
+    
+    def log_pdf(self,data, theta):
+        '''
+        Calculate the log_likelihood of theta given y_obs.
+        log p(x_obs|theta)
+        
+        ----------
+        Parameters
+        ----------
+        theta : array
+            The array of parameters
+        Returns
+        -------
+        output : float
+            The likelihood value L(theta)
+        '''
+        mean = theta[0]*np.ones(self.mudim)
+        covar = theta[1]*np.diag(np.ones(self.mudim))
+        ## "Observed" Densities according to the original theta
+        densities = distributions.normal_nd.pdf(data,mean,covar)
+        ll = np.log(densities+1e-10)
+        return ll.sum()
+
+    def sample_from_prior(self):
+        '''
+        Sample one value from the prior.
+        ----------
+        Returns
+        -------
+        output : array
+            one sample from the prior
+        '''
+        sample_mean = self.prior[0].draw_samples(self.prior_args[0,0],self.prior_args[0,1],1)[0]
+        sample_var = self.prior[1].draw_samples(self.prior_args[1,0],self.prior_args[1,1],1)[0]
+        return np.array([sample_mean, sample_var])
+    
+    def visualize(self):
+        print('visualizing p(x|theta) in PCA space')
+        
+        # -------------------------------
+        # 1. Prepare samples / PCA
+        # -------------------------------
+        samples = self.data_obs                       # (m, 72)
+        m, dim = samples.shape
+
+        # Compute PCA
+        data_mean = samples.mean(axis=0)
+        Xc = samples - data_mean                      # center
+        C = Xc.T @ Xc / (m - 1)                       # covariance
+        evals, evecs = np.linalg.eigh(C)              # symmetric eigendecomp
+        
+        # top-2 principal components
+        idx = np.argsort(evals)[::-1]
+        W = evecs[:, idx[:2]]                         # (72, 2)
+        
+        # project observed samples to 2D PCA space
+        Z_samples = Xc @ W                             # (m, 2)
+
+        # -------------------------------
+        # 2. Determine plotting range
+        # -------------------------------
+        min_values = Z_samples.min(axis=0)
+        max_values = Z_samples.max(axis=0)
+
+        N_grid = 200
+        ranges = []
+        for k in range(2):                             # only 2D now
+            r = np.linspace(min_values[k], max_values[k], N_grid)
+            ranges.append(r)
+        X, Y = np.meshgrid(*ranges)
+        
+        # Build grid points R in PCA space: shape (N_grid*N_grid, 2)
+        R = np.stack([X.ravel(), Y.ravel()], axis=1)
+
+        # -------------------------------
+        # 3. Evaluate p(x | theta) in PCA space
+        # -------------------------------
+        theta = self.get_true_theta()
+        mean_full = np.full(dim, theta[0])             # 72-D mean
+        var = theta[1]                                 # variance
+        
+        # Project model mean to PCA space
+        mean_pca = (mean_full - data_mean) @ W         # (2,)
+
+        # Covariance in PCA space is var * I_2 due to isotropic model + orthonormal PCA basis
+        cov_pca = var * np.eye(2)
+        
+        # Multivariate normal pdf in PCA space
+        from scipy.stats import multivariate_normal
+        rv = multivariate_normal(mean=mean_pca, cov=cov_pca)
+        
+        pdf = rv.pdf(R)                                # (N_grid*N_grid,)
+        Z_pdf = pdf.reshape(X.shape)                   # (N_grid, N_grid)
+
+        # -------------------------------
+        # 4. Make contour plot
+        # -------------------------------
+        plt.figure(figsize=(6, 6))
+        plt.contour(X, Y, Z_pdf, 15, cmap='jet', linewidths=0.75)
+
+        # overlay sample scatter
+        plt.scatter(Z_samples[:,0], Z_samples[:,1], s=8, color='black', alpha=0.25)
+
+        plt.title(r"$p(x|\theta)$ projected onto first 2 PCA components")
+        plt.xlabel("PC 1")
+        plt.ylabel("PC 2")
+        plt.tight_layout()
+        plt.show()
         
