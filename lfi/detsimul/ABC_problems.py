@@ -166,3 +166,4 @@ class ABC_Problem(object):
         for k in range(dim):
             theta[:,k] = self.prior_args[k,0] + (self.prior_args[k,1] - self.prior_args[k,0])*prob[:,k]
         return theta
+

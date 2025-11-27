@@ -131,7 +131,7 @@ class EncodeLayer(nn.Module):
         # Image data
         if self.type == 'cnn2d':
             n, d = x.size()
-            x = x.view(n, 1, int(d**0.5), int(d**0.5))
+            x = x.view(n, 1, int(d**0.5), int(d**0.5)) ## The Image is reshaped to their original version
             x = self.cnn2d(x)    # n*k
         # default
         if self.type == 'plain':

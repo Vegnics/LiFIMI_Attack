@@ -38,6 +38,18 @@ class FFD_Image_Problem(ABC_problems.ABC_Problem):
     def get_true_theta(self):
         return np.array([self.true_mean, self.true_var])
     
+    def statistics(self, data, theta=None, is_sufficient=False):
+        """
+        args:
+            - data: 
+        For this problem there are no handcrafted stats
+        """
+        if self.stat == 'raw':
+            stat = data
+            return stat
+        else:
+            raise Exception("No handcrafted statistics are available for this problem") 
+    
     def basis_function(self,t):
         """
         B-spline basis function [FFD deformation]

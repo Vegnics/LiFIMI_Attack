@@ -264,8 +264,8 @@ class Base_ABC_Image(object):
 
         self.problem = problem
         
-        self.y_obs = problem.statistics(problem.data_obs, problem.get_true_theta())
-        self.y_dim = self.y_obs.size
+        #self.y_obs = problem.statistics(problem.data_obs, problem.get_true_theta())
+        #self.y_dim = self.y_obs.size
 
         self.simulator = problem.simulator
         self.prior = problem.sample_from_prior
@@ -278,7 +278,7 @@ class Base_ABC_Image(object):
         self.save_dir = hyperparams.save_dir
 
         self.samples = None
-        self.stats = None
+        self.stats = None 
         
         self.prior = problem.sample_from_prior
         self.num_sim = hyperparams.num_sim
@@ -433,9 +433,11 @@ class Base_ABC_Image(object):
 
         # Extract params
         num_sim, num_samples, pid = param[0], param[1], param[2]
-
-        stats, samples = np.zeros((num_sim, self.y_dim), float), np.zeros(
+        
+        # Initialize the array containing samples (thetas) and stats
+        statss, samples = np.zeros((num_sim, self.y_dim), float), np.zeros(
                 (num_sim, self.num_theta), float)
+        
         discrepancies = []
 
         # Simulate
@@ -443,32 +445,32 @@ class Base_ABC_Image(object):
         for i in range(num_sim):
             while True:
                 # Sample from the prior distribution
-                theta = self.prior()
+                theta = self.prior()  #<<<<< Sampling
 
                 # Throw away bad thetas
                 if self.is_valid_theta(theta) is False: continue
 
                 # Get summary statistics
-                data = self.problem.simulator(theta)
+                data = self.problem.simulator(theta)  #<<<< Simulation (Warped images generation)
                 if data is None: continue
-                y = self.problem.statistics(data=data, theta=theta)
+                y = self.problem.statistics(data=data, theta=theta)  #<<<< Return the raw warped images
 
                 # Whitening stat
                 y, y_obs = self.whiten(y), self.whiten(self.y_obs)
 
                 # Calculate error
-                error = self.discrepancy(y_obs, y)
+                error = self.discrepancy(y_obs, y) 
 
                 # Collect samples & discrepancies
-                stats[i, :] = y
-                samples[i, :] = theta
+                statss[i, :] = y  ## Raw images (PROBLEM:: could get out of RAM) 
+                samples[i, :] = theta ## Sampled theta
                 discrepancies.append(error)
                 break
 
             if i % (int(num_sim/5)) == 0 and i>=1 and pid==0:
                 print('[sampling] finished sampling ', i)
                 
-        return [samples, stats, discrepancies]
+        return [samples, statss, discrepancies]
 
     @abstractmethod
     def run(self, num_samples, reset=True):

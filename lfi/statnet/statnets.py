@@ -9,7 +9,7 @@ import time
 from copy import deepcopy
 
 from lfi.utils import optimizer
-from lfi.statnet.baselayer import CriticLayer,ScoreLayer
+from lfi.statnet.baselayer import CriticLayer,ScoreLayer,EncodeLayer
 
 
 class ISN(nn.Module):
@@ -18,6 +18,7 @@ class ISN(nn.Module):
     """
     def __init__(self, architecture, dim_y, hyperparams):
         super().__init__()
+        # dim-y is the dimention of theta
 
         # default hyperparameters
         self.estimator = 'JSD' if not hasattr(hyperparams, 'estimator') else hyperparams.estimator  
@@ -27,17 +28,17 @@ class ISN(nn.Module):
         self.n_neg = 25 if not hasattr(hyperparams, 'n_neg') else hyperparams.n_neg
         
         self.encode_y = True if not hasattr(hyperparams, 'encode_y') else hyperparams.encode_y
-        self.encode_layer = EncodeLayer(architecture, dim_y, hyperparams)
-        self.encode2_layer = EncodeLayer([dim_y] + architecture[1:], dim_y, None)
+        self.encode_layer = EncodeLayer(architecture, dim_y, hyperparams) ### << Statistic net S
+        self.encode2_layer = EncodeLayer([dim_y] + architecture[1:], dim_y, None) ## << Theta representation net H
         self.critic_layer = CriticLayer(architecture, architecture[-1], hyperparams)
     
-    def encode(self, x):
+    def encode(self, x): ## Statistic net S
         # s = s(x), get the summary statistic of x
         return self.encode_layer(x)
     
-    def encode2(self, y):
+    def encode2(self, y):## Theta representation net H (by default, in-dim = out-dim)
         # theta = h(y), get the representation of y
-        return self.encode2_layer(y)
+        return self.encode2_layer(y) 
         
     def MI(self, z, y, n=10):
         # [A]. Jensen-shannon divergence (DeepInfoMax, ICLR'19)
@@ -92,6 +93,8 @@ class ISN(nn.Module):
         return mi
     
     def objective_func(self, x, y):
+        ## Compute the mutual information I(X;Y)
+        ## Where X is the statistic and Y is theta 
         return self.MI(x, y, n=self.n_neg)
     
     def learn(self, x, y):
