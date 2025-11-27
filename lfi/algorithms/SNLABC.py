@@ -130,4 +130,3 @@ class SNL_ABC(ABC_algorithms.Base_ABC):
         
         
         
-        
