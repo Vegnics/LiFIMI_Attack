@@ -48,6 +48,7 @@ class SNL_ABC(ABC_algorithms.Base_ABC):
         self.nde_array = []
 
     def fit_nde(self):
+        ## Train Neural Density Estimators
         all_stats = torch.tensor(np.vstack(self.all_stats)).float().to(self.device)
         all_samples = torch.tensor(np.vstack(self.all_samples)).float().to(self.device)
         [n, dim] = all_stats.size()
