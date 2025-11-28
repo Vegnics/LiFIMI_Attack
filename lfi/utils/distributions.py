@@ -559,7 +559,7 @@ class copula:
                 U.append(np.array(u))
 
             # step 2. filter extreme value in yetas
-            U = np.mat(U)
+            U = np.asmatrix(U)
             return np.array(U)
 
     @staticmethod
@@ -583,7 +583,7 @@ class copula:
                 Z.append(np.array(z))
 
             # step 2. filter extreme value in yetas
-            Z = np.mat(Z)
+            Z = np.asmatrix(Z)
             Z[Z == np.inf] = 0.0
             Z[Z == -np.inf] = 0.0
 
@@ -627,7 +627,7 @@ class copula:
             gc_marginal = gc_marginals[k]
             U[:, k] = MoG.cdf(X[:, k], gc_marginal)
         Z = norm.ppf(U)
-        gc_cov = np.mat(Z).T * np.mat(Z) / n
+        gc_cov = np.asmatrix(Z).T * np.asmatrix(Z) / n
         
         self.gc_cdf_mapping = gc_cdf_mapping
         self.gc_marginals = gc_marginals
