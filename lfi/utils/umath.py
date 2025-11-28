@@ -82,10 +82,11 @@ def log_likelihood_1D(samples, log_likelihood_function):
     
 def log_likelihood_2D(samples, log_likelihood_function):
     data = samples.transpose()
-    xmin = data[0, 0:].min()
-    xmax = data[0, 0:].max()
-    ymin = data[1, 0:].min()
-    ymax = data[1, 0:].max()
+    F = 1.0
+    xmin = data[0, 0:].min()-2*F
+    xmax = data[0, 0:].max()+2*F
+    ymin = data[1, 0:].min()-F
+    ymax = data[1, 0:].max()+F
 
     X, Y = np.mgrid[xmin:xmax:50j, ymin:ymax:50j]
     Z = np.zeros(X.shape)

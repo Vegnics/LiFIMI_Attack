@@ -88,11 +88,11 @@ class SNL2_ABC(ABC_algorithms.Base_ABC):
         architecture = [dim] + [100, 100, h]    
         print('architecture', architecture)
         if self.hyperparams.stat == 'infomax':
-            net = ISN.ISN(architecture, dim_y=self.problem.K, hyperparams=self.hyperparams)
+            net = ISN(architecture, dim_y=self.problem.K, hyperparams=self.hyperparams)
         if self.hyperparams.stat == 'moment':
-            net = MSN.MSN(architecture, dim_y=self.problem.K, hyperparams=self.hyperparams)
+            net = MSN(architecture, dim_y=self.problem.K, hyperparams=self.hyperparams)
         if self.hyperparams.stat == 'score':
-            net = SSN.SSN(architecture, dim_y=self.problem.K, hyperparams=self.hyperparams)
+            net = SSN(architecture, dim_y=self.problem.K, hyperparams=self.hyperparams)
         net.train().to(self.device)
         net.learn(x=all_stats, y=all_samples)
         net = net.eval().cpu()
@@ -337,7 +337,10 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
             self.l = l
             self.max_ll = None
             if all_stats is None:
-                self.simulate() ## Sampling and simulation loop
+                # simulate() is different from problem.simulator(),
+                # simulate() obtains low-dim summaries from a group of 
+                # high-dim samples (i.e. a Dataset-> vector summary)
+                self.simulate() 
                 # Enlarging the Dataset
                 self.all_stats.append(self.stats) # Add more raw stat samples (images)
                 self.all_samples.append(self.samples) # Add more theta samples

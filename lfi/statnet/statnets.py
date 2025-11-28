@@ -50,6 +50,8 @@ class ISN(nn.Module):
             for i in range(n): 
                 idx_pos = idx_pos + np.linspace(0, m-1, m).tolist()
                 idx_neg = idx_neg + torch.randperm(m).cpu().numpy().tolist()
+            
+            # Use of the Critic Network T()
             f_pos = self.critic_layer(z, y)
             f_neg = self.critic_layer(z[idx_pos], y[idx_neg])
             A, B = -F.softplus(-f_pos), F.softplus(f_neg)

@@ -119,10 +119,10 @@ class Base_ABC(object):
         self.simulate()
         
         # Compute mean & covariance matrix
-        stats = self.stats
-        stats = np.mat(stats)
-        mean = stats.mean(axis=0)
-        cov = (stats-mean).T * (stats-mean) / stats.shape[0]
+        statss = self.stats
+        statss = np.mat(statss)
+        mean = statss.mean(axis=0)
+        cov = (statss-mean).T * (statss-mean) / statss.shape[0]
         self.COV = cov
         self.mean = mean
 
@@ -195,10 +195,10 @@ class Base_ABC(object):
         # Concatenate the results
         for k in range(N_proc):
             ret = rets[k]
-            samples, stats, discrepancies = ret[0], ret[1], ret[2]
+            samples, statss, discrepancies = ret[0], ret[1], ret[2]
             [n, dim] = samples.shape
             self.samples[k*n:(k+1)*n, :] = samples
-            self.stats[k*n:(k+1)*n, :] = stats
+            self.stats[k*n:(k+1)*n, :] = statss
             self.discrepancies += discrepancies
             
     def _simulate(self, param):
@@ -209,8 +209,12 @@ class Base_ABC(object):
 
         # Extract params
         num_sim, num_samples, pid = param[0], param[1], param[2]
+        #sttr = f"_simulate: Numsim: {num_sim}, \
+        #        Nsamples: {num_samples}, pid: {pid}, \
+        #        ydim: {self.y_dim}"
+        #print(sttr)
 
-        stats, samples = np.zeros((num_sim, self.y_dim), float), np.zeros(
+        statss, samples = np.zeros((num_sim, self.y_dim), float), np.zeros(
                 (num_sim, self.num_theta), float)
         discrepancies = []
 
@@ -227,6 +231,7 @@ class Base_ABC(object):
                 # Get summary statistics
                 data = self.problem.simulator(theta)
                 if data is None: continue
+                #print(data.shape)
                 y = self.problem.statistics(data=data, theta=theta)
 
                 # Whitening stat
@@ -234,17 +239,19 @@ class Base_ABC(object):
 
                 # Calculate error
                 error = self.discrepancy(y_obs, y)
-
+                #print(y.shape)
                 # Collect samples & discrepancies
-                stats[i, :] = y
+                statss[i, :] = y
                 samples[i, :] = theta
                 discrepancies.append(error)
                 break
+            
+            #print(statss.shape,samples.shape,discrepancies[0].shape)
 
             if i % (int(num_sim/5)) == 0 and i>=1 and pid==0:
                 print('[sampling] finished sampling ', i)
                 
-        return [samples, stats, discrepancies]
+        return [samples, statss, discrepancies]
 
     @abstractmethod
     def run(self, num_samples, reset=True):
@@ -264,8 +271,9 @@ class Base_ABC_Image(object):
 
         self.problem = problem
         
-        #self.y_obs = problem.statistics(problem.data_obs, problem.get_true_theta())
-        #self.y_dim = self.y_obs.size
+        ## y_obs are the observed images (raw statistics) 
+        self.y_obs = problem.statistics(problem.data_obs, problem.get_true_theta())
+        self.y_dim = self.y_obs.size
 
         self.simulator = problem.simulator
         self.prior = problem.sample_from_prior
@@ -419,10 +427,10 @@ class Base_ABC_Image(object):
         # Concatenate the results
         for k in range(N_proc):
             ret = rets[k]
-            samples, stats, discrepancies = ret[0], ret[1], ret[2]
+            samples, statss, discrepancies = ret[0], ret[1], ret[2]
             [n, dim] = samples.shape
             self.samples[k*n:(k+1)*n, :] = samples
-            self.stats[k*n:(k+1)*n, :] = stats
+            self.stats[k*n:(k+1)*n, :] = statss
             self.discrepancies += discrepancies
             
     def _simulate(self, param):
@@ -453,6 +461,9 @@ class Base_ABC_Image(object):
                 # Get summary statistics
                 data = self.problem.simulator(theta)  #<<<< Simulation (Warped images generation)
                 if data is None: continue
+                
+                # The statistics S_o reduces data to a single summary vector 
+                # for dimentionality reduction  
                 y = self.problem.statistics(data=data, theta=theta)  #<<<< Return the raw warped images
 
                 # Whitening stat
@@ -460,7 +471,7 @@ class Base_ABC_Image(object):
 
                 # Calculate error
                 error = self.discrepancy(y_obs, y) 
-
+                #print(statss.shape,y.shape)
                 # Collect samples & discrepancies
                 statss[i, :] = y  ## Raw images (PROBLEM:: could get out of RAM) 
                 samples[i, :] = theta ## Sampled theta

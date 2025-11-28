@@ -27,6 +27,7 @@ class FFD_Image_Problem(ABC_problems.ABC_Problem):
         self.true_mean = 0.0
         self.true_var = 1.0
         
+        self.stat = 'raw'
         self.N = N
         self.n = n
         self.mudim = 72
@@ -43,6 +44,8 @@ class FFD_Image_Problem(ABC_problems.ABC_Problem):
         args:
             - data: 
         For this problem there are no handcrafted stats
+        return
+            - stat: group of warped images
         """
         if self.stat == 'raw':
             stat = data
@@ -156,7 +159,7 @@ class FFD_Image_Problem(ABC_problems.ABC_Problem):
 
     def simulator(self,theta):
         """
-        Returns deformed images
+        Returns mu, deformed images
 
         Args:
             theta (_type_): _description_
@@ -167,8 +170,20 @@ class FFD_Image_Problem(ABC_problems.ABC_Problem):
         nmean = mean*np.ones(self.mudim)
         MU = distributions.normal_nd.draw_samples(nmean,cov,self.n)
         # Convert mu to x (images)
-        #X = self.Z2X(MU)
-        return MU
+        #ndisp = Z.shape[0]
+        #print(f"==== Warping===>{ndisp} samples")
+        #cnt = 1
+        Wimages = [] 
+        #for fname in glob(self.img_folder+"/*.jpg"):
+        #    img = cv2.imread(fname,1)
+        #    warped = self.ffd_image_warp(img,self.ctrl_pnts,self.ctrl_pnts,Z[d,:])
+        #    warped = cv2.resize(warped,(256,256),interpolation=cv2.INTER_LINEAR)
+        #    Wimages.append(warped)
+        #Wimages = np.array(Wimages)
+        ## MU :[#Sims,mu_dim]
+        ## Wimages: [#Sims,256,256,3]
+        return MU,Wimages  
+        #return MU,
     
     def Z2X(self, Z):
         ndisp = Z.shape[0]

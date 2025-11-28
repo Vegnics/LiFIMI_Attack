@@ -19,7 +19,7 @@ class Gaussian_Copula_Problem(ABC_problems.ABC_Problem):
 
     def __init__(self, N=100, n=50):
         self.N = N                                                                       # number of posterior samples
-        self.n = n                                                                       # number of i.i.d data x_i ~ p(x|theta)
+        self.n = n ## Number of "simulations" used to create a data point                                                                        # number of i.i.d data x_i ~ p(x|theta)
 
         self.prior = [distributions.uniform, distributions.uniform, distributions.uniform]
         self.prior_args = np.array([[0.5, 12.5], [0, 1.0], [0.4, 0.8]])                  # uniform prior
@@ -62,7 +62,12 @@ class Gaussian_Copula_Problem(ABC_problems.ABC_Problem):
         return stat
     
     def statistics(self, data, theta=None):
-        if self.stat == 'raw':
+        if self.stat == 'raw_single':
+            """
+            Experimental raw 
+            """
+            return data.reshape(1,-1)
+        elif self.stat == 'raw':
             # (marginal quantiles) + (latent correlation) as summary statistics
             stat_A = self._ss_quantiles(data, n_quantiles=20)
             stat_B = self._ss_corr(self.X2Z(data, theta[0], theta[1]))
@@ -83,9 +88,12 @@ class Gaussian_Copula_Problem(ABC_problems.ABC_Problem):
 
         # sample z ~ N(0, V)
         Z = distributions.normal_nd.draw_samples([0, 0], V, self.n)
-
+        
+        #print(f"Simulator Z:  {Z.shape}")
+        
         # convert z to x
         X = self.Z2X(Z, alpha, coeff)
+        #print(f"Simulator:  {X.shape}")
         return X
 
     def log_likelihood(self, theta):

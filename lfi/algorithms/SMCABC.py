@@ -61,7 +61,7 @@ class SMC_ABC(ABC_algorithms.Base_ABC):
             # Gaussian
             [n, dim] = samples.shape
             mu = np.mean(samples, axis=0)
-            M = np.mat(samples - mu)
+            M = np.asmatrix(samples - mu)
             cov = np.cov(M.T)
             return [mu, cov]
         else:

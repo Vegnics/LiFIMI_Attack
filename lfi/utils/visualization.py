@@ -44,8 +44,8 @@ def plot_likelihood(samples, log_likelihood_function, dimensions=(0,1)):
     (mean1, std1) = visualize_samples[:,0].mean(), visualize_samples[:,0].std()
     (mean2, std2) = visualize_samples[:,1].mean(), visualize_samples[:,1].std()
     print('mean-parma1 = ', mean1, '     mean-param2 = ', mean2)
-    R = np.array([[mean1-3.0*std1, mean1+3.0*std1], [mean2-3.0*std2, mean2+3.0*std2]])
-    
+    #R = np.array([[mean1-3.0*std1, mean1+3.0*std1], [mean2-3.0*std2, mean2+3.0*std2]])
+    R = np.array([[mean1-8.0*std1, mean1+8.0*std1], [mean2-8.0*std2, mean2+8.0*std2]])
     # Visualize contour
     fig = plt.figure(time.time()*100, figsize=(5, 5))
     #fig.set_tight_layout(True)
