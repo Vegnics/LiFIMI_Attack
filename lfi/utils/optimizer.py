@@ -29,6 +29,7 @@ class NNOptimizer(nn.Module):
     def learn(net, x, y):    
         # hyperparams 
         T = 2000 if not hasattr(net, 'max_iteration') else net.max_iteration
+        print(f"Optimizer max_iter: {T}")
         PRINTING = True if not hasattr(net, 'trace_learning') else net.trace_learning   
         T_NO_IMPROVE_THRESHOLD = 800
         

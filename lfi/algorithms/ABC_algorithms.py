@@ -209,11 +209,6 @@ class Base_ABC(object):
 
         # Extract params
         num_sim, num_samples, pid = param[0], param[1], param[2]
-        #sttr = f"_simulate: Numsim: {num_sim}, \
-        #        Nsamples: {num_samples}, pid: {pid}, \
-        #        ydim: {self.y_dim}"
-        #print(sttr)
-
         statss, samples = np.zeros((num_sim, self.y_dim), float), np.zeros(
                 (num_sim, self.num_theta), float)
         discrepancies = []
@@ -224,26 +219,22 @@ class Base_ABC(object):
             while True:
                 # Sample from the prior distribution
                 theta = self.prior()
-
                 # Throw away bad thetas
                 if self.is_valid_theta(theta) is False: continue
-
                 # Get summary statistics
                 data = self.problem.simulator(theta)
                 if data is None: continue
-                #print(data.shape)
                 y = self.problem.statistics(data=data, theta=theta)
-
                 # Whitening stat
                 y, y_obs = self.whiten(y), self.whiten(self.y_obs)
-
                 # Calculate error
                 error = self.discrepancy(y_obs, y)
                 #print(y.shape)
                 # Collect samples & discrepancies
-                statss[i, :] = y
-                samples[i, :] = theta
-                discrepancies.append(error)
+                statss[i, :] = y           ## It should return the images
+                samples[i, :] = theta      ## It should return the sampled thetas
+                discrepancies.append(error) ## Discrepancies between sampled
+                                            ##thetas and observed thetas
                 break
             
             #print(statss.shape,samples.shape,discrepancies[0].shape)
@@ -272,8 +263,9 @@ class Base_ABC_Image(object):
         self.problem = problem
         
         ## y_obs are the observed images (raw statistics) 
-        self.y_obs = problem.statistics(problem.data_obs, problem.get_true_theta())
+        self.y_obs,self.img_obs = problem.statistics(problem.data_obs,problem.imgs_obs, problem.get_true_theta())
         self.y_dim = self.y_obs.size
+        self.img_shape = self.img_obs.size
 
         self.simulator = problem.simulator
         self.prior = problem.sample_from_prior
@@ -411,7 +403,8 @@ class Base_ABC_Image(object):
         # > wrapper function of rejection sampling algorithm. Launch several processes to do sampling in parallel
 
         # Initialization
-        self.stats = np.zeros((self.num_sim, self.y_dim), float)
+        #self.stats = np.zeros((self.num_sim, self.y_dim), float)
+        self.stats = np.zeros((self.num_sim, 256,256,3), float)
         self.samples = np.zeros((self.num_sim, self.num_theta), float)
         self.discrepancies = []
 
@@ -430,7 +423,7 @@ class Base_ABC_Image(object):
             samples, statss, discrepancies = ret[0], ret[1], ret[2]
             [n, dim] = samples.shape
             self.samples[k*n:(k+1)*n, :] = samples
-            self.stats[k*n:(k+1)*n, :] = statss
+            self.stats[k*n:(k+1)*n, :, :, :] = statss ## warped images (nsim,256,256,3)
             self.discrepancies += discrepancies
             
     def _simulate(self, param):
@@ -443,29 +436,35 @@ class Base_ABC_Image(object):
         num_sim, num_samples, pid = param[0], param[1], param[2]
         
         # Initialize the array containing samples (thetas) and stats
-        statss, samples = np.zeros((num_sim, self.y_dim), float), np.zeros(
+        #statss, samples = np.zeros((num_sim, self.y_dim), float), np.zeros(
+        #        (num_sim, self.num_theta), float)
+        
+        statss, samples = np.zeros((num_sim, 256,256,3), float), np.zeros(
                 (num_sim, self.num_theta), float)
+        
         
         discrepancies = []
 
         # Simulate
         np.random.seed(pid + int(time.time()))
+        cnt = 0
         for i in range(num_sim):
             while True:
+                cnt +=1
                 # Sample from the prior distribution
                 theta = self.prior()  #<<<<< Sampling
-
+                if cnt%100==0:
+                    print(f"Rejection Sampling {cnt}, theta: {theta}")
                 # Throw away bad thetas
                 if self.is_valid_theta(theta) is False: continue
 
                 # Get summary statistics
-                data = self.problem.simulator(theta)  #<<<< Simulation (Warped images generation)
+                data,wimages = self.problem.simulator(theta)  #<<<< Simulation (Warped images generation)
                 if data is None: continue
                 
-                # The statistics S_o reduces data to a single summary vector 
-                # for dimentionality reduction  
-                y = self.problem.statistics(data=data, theta=theta)  #<<<< Return the raw warped images
-
+                ## The problem statistics should receive mus and images
+                y,wimg = self.problem.statistics(data=data,images=wimages, theta=theta)  #<<<< Return the raw warped images
+                ## "statistics" returns mu and warped image
                 # Whitening stat
                 y, y_obs = self.whiten(y), self.whiten(self.y_obs)
 
@@ -473,10 +472,13 @@ class Base_ABC_Image(object):
                 error = self.discrepancy(y_obs, y) 
                 #print(statss.shape,y.shape)
                 # Collect samples & discrepancies
-                statss[i, :] = y  ## Raw images (PROBLEM:: could get out of RAM) 
-                samples[i, :] = theta ## Sampled theta
-                discrepancies.append(error)
+                statss[i, : , :, :] = wimg  ## It should return the images
+                samples[i, :] = theta      ## It should return the sampled thetas
+                discrepancies.append(error) ## Discrepancies between sampled
+                                            ##thetas and observed thetas
                 break
+            
+            
 
             if i % (int(num_sim/5)) == 0 and i>=1 and pid==0:
                 print('[sampling] finished sampling ', i)

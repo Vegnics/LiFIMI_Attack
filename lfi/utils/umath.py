@@ -79,15 +79,77 @@ def log_likelihood_1D(samples, log_likelihood_function):
         log_pdf = log_likelihood_function(theta)
         Z.append(log_pdf)
     return (X, Z)
-    
+"""
+def log_likelihood_2D(samples, log_likelihood_function,
+                      n_grid=80,
+                      q_low=0.01, q_high=0.99,
+                      delta_log=8.0,
+                      return_log=True):
+    #
+    #Build a 2D grid around the *posterior* mass and evaluate log-likelihood.
+
+    #samples : (N, 2) array of θ samples (ideally posterior or at least focused)
+    #log_likelihood_function : callable(theta) -> log p(x_o | theta)
+    #n_grid : number of grid points per dimension
+    #q_low, q_high : quantiles of samples that define the window
+    #delta_log : only keep logL within [max_logL - delta_log, max_logL]
+    #return_log : if True, return log-likelihood grid; else exp(logL_shifted)
+    #
+    samples = np.asarray(samples)
+    assert samples.shape[1] == 2, "log_likelihood_2D expects 2D samples"
+
+    # --- choose grid region from sample quantiles ---
+    x_samp = samples[:, 0]
+    y_samp = samples[:, 1]
+
+    x_low, x_high = np.quantile(x_samp, [q_low, q_high])
+    y_low, y_high = np.quantile(y_samp, [q_low, q_high])
+
+    # small padding
+    mx = 0.1 * (x_high - x_low)
+    my = 0.1 * (y_high - y_low)
+
+    xmin = x_low - mx
+    xmax = x_high + mx
+    ymin = y_low - my
+    ymax = y_high + my
+
+    # --- build grid in that region ---
+    x_lin = np.linspace(xmin, xmax, n_grid)
+    y_lin = np.linspace(ymin, ymax, n_grid)
+    X, Y = np.meshgrid(x_lin, y_lin)
+
+    Z_log = np.zeros_like(X)
+
+    # evaluate log-likelihood on grid
+    for i in range(n_grid):
+        for j in range(n_grid):
+            theta = np.array([X[i, j], Y[i, j]])
+            Z_log[i, j] = log_likelihood_function(theta)
+
+    # --- clip to a band near the maximum so far-away contours disappear ---
+    max_log = Z_log.max()
+    vmin = max_log - delta_log
+    Z_log_clipped = np.clip(Z_log, vmin, max_log)
+
+    if return_log:
+        return X, Y, Z_log_clipped
+    else:
+        # shift so max is 0, then exponentiate
+        return X, Y, np.exp(Z_log_clipped - max_log)
+"""
+#"""
+
 def log_likelihood_2D(samples, log_likelihood_function):
     data = samples.transpose()
-    F = 1.0
-    xmin = data[0, 0:].min()-2*F
-    xmax = data[0, 0:].max()+2*F
-    ymin = data[1, 0:].min()-F
-    ymax = data[1, 0:].max()+F
-
+    xmin = data[0, 0:].min()
+    xmax = data[0, 0:].max()
+    ymin = data[1, 0:].min()
+    ymax = data[1, 0:].max()
+    
+    ### Modifying the function to prevent erroneous plots
+    ### Find the largest point and re-center
+    
     X, Y = np.mgrid[xmin:xmax:50j, ymin:ymax:50j]
     Z = np.zeros(X.shape)
     for i in range(50):
@@ -96,9 +158,10 @@ def log_likelihood_2D(samples, log_likelihood_function):
             y = Y[i,j]
             theta = [x,y]
             logpdf = log_likelihood_function(theta)
+            #print(f"LogLike2D: {np.exp(logpdf)}, theta: {theta}, {logpdf}")
             Z[i,j] = np.exp(logpdf)
     return (X, Y, Z)
-
+#"""
 
 def log_likelihood_3D(samples, log_likelihood_function, dimensions):
     data = samples.transpose()
@@ -122,6 +185,7 @@ def log_likelihood_3D(samples, log_likelihood_function, dimensions):
                     z = Z[i,j,k]
                     theta = [x,y,z]
                     logpdf = log_likelihood_function(theta)
+                    print(f"LogLike3D: {np.exp(logpdf)}, theta: {theta}, {logpdf}")
                     f_ijk = np.exp(logpdf)
                     F[i,j] = F[i,j] + f_ijk
         return (XX,YY,F)

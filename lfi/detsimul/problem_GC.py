@@ -95,6 +95,37 @@ class Gaussian_Copula_Problem(ABC_problems.ABC_Problem):
         X = self.Z2X(Z, alpha, coeff)
         #print(f"Simulator:  {X.shape}")
         return X
+    
+    def compute_pca_kernel(self, n_components=3):
+        """
+        Compute PCA projection kernel (top principal components)
+        from observed data.
+
+        Parameters
+        ----------
+        data : np.ndarray
+            Observed dataset, shape (N, D)
+        n_components : int
+            Number of PCA components to keep (default = 3)
+
+        Stores
+        ------
+        self.pca_mean : (D,)
+        self.pca_basis : (D, n_components)
+        self.pca_dim : int
+        """
+    # Ensure 2D array
+    data = np.asarray(data)
+    N, D = data.shape
+    self.pca_mean = data.mean(axis=0)         # (D,)
+    Xc = data - self.pca_mean                 # centered data
+    C = (Xc.T @ Xc) / (N - 1)
+    evals, evecs = np.linalg.eigh(C)
+    idx = np.argsort(evals)[::-1]             # largest → smallest
+    W = evecs[:, idx[:n_components]]          # (D, n_components)
+    self.pca_dim = n_components
+    self.pca_basis = W                        # PCA kernel
+    return
 
     def log_likelihood(self, theta):
 

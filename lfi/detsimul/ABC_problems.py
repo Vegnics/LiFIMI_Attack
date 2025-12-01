@@ -125,7 +125,9 @@ class ABC_Problem(object):
             theta = self.sample_from_prior()
             ll = self.log_likelihood(theta)
             if ll > max_ll: max_ll = ll
-            if j%(self.N)==0: print('finished pilot run:', j)
+            if j%(self.N)==0: 
+                print('finished pilot run:', j)
+                #print(f"logLike: {ll}")
 
         # rejection sampling
         i = 0

@@ -14,7 +14,7 @@ from glob import glob
 import cv2
 
 
-class FFD_Image_Problem(ABC_problems.ABC_Problem):
+class FFD_Image_Problem(ABC_problems.ABC_Problem_Image):
     """
     The problem consists of drawing FFD deformation parameters
     from a Gaussian Distribution and applying them to a group
@@ -35,11 +35,23 @@ class FFD_Image_Problem(ABC_problems.ABC_Problem):
         self.img_folder = image_folder
         self.out_img_folder = out_folder
         self.ctrl_pnts = 6
+        self.work_imgs = []
+    
+    def get_work_imgs(self):
+        """
+        Read and resize the working images
+        """
+        for fname in glob(self.img_folder+"/*.jpg")[0:2]:
+            print(fname)
+            img = cv2.imread(fname,1)
+            _img = cv2.resize(img,(256,256),interpolation=cv2.INTER_LINEAR)
+            self.work_imgs.append(_img.copy())
+        return
     
     def get_true_theta(self):
         return np.array([self.true_mean, self.true_var])
     
-    def statistics(self, data, theta=None, is_sufficient=False):
+    def statistics(self, data, images, theta=None, is_sufficient=False):
         """
         args:
             - data: 
@@ -50,7 +62,8 @@ class FFD_Image_Problem(ABC_problems.ABC_Problem):
         if self.stat == 'raw':
             idx = np.random.randint(low=0,high=data.shape[0])
             stat = data
-            return stat[idx].reshape(1,-1)
+            print(f"Images shape:: {images.shape}")
+            return stat[idx].reshape(1,-1),images[idx,:,:,:]
         else:
             raise Exception("No handcrafted statistics are available for this problem") 
     
@@ -158,9 +171,10 @@ class FFD_Image_Problem(ABC_problems.ABC_Problem):
         return warped_image
 
 
-    def simulator(self,theta):
+    def simulator(self,theta,n_sim=None):
         """
-        Returns mu, deformed images
+        For this version of the problem the simulator returns
+        mu, and the deformed images
 
         Args:
             theta (_type_): _description_
@@ -169,22 +183,32 @@ class FFD_Image_Problem(ABC_problems.ABC_Problem):
         var = theta[1]
         cov = np.diag(var*np.ones(self.mudim))
         nmean = mean*np.ones(self.mudim)
-        MU = distributions.normal_nd.draw_samples(nmean,cov,self.n)
+        if n_sim is None:
+            MU = distributions.normal_nd.draw_samples(nmean,cov,self.n)
+        elif type(n_sim)==int:
+            print(f"Simulator nsim: {n_sim}")
+            MU = distributions.normal_nd.draw_samples(nmean,cov,n_sim)
         # Convert mu to x (images)
         #ndisp = Z.shape[0]
         #print(f"==== Warping===>{ndisp} samples")
         #cnt = 1
+        
         Wimages = [] 
-        #for fname in glob(self.img_folder+"/*.jpg"):
-        #    img = cv2.imread(fname,1)
-        #    warped = self.ffd_image_warp(img,self.ctrl_pnts,self.ctrl_pnts,Z[d,:])
-        #    warped = cv2.resize(warped,(256,256),interpolation=cv2.INTER_LINEAR)
-        #    Wimages.append(warped)
-        #Wimages = np.array(Wimages)
+        #imgsearch = self.img_folder+"/*.jpg"
+        #for fname in glob(self.img_folder+"/*.jpg")[0:2]:
+        #for fname in glob(imgsearch)[0:2]:
+        for img in self.work_imgs:
+            #img = cv2.imread(fname,1)
+            for d in range(MU.shape[0]):
+                warped = self.ffd_image_warp(img,self.ctrl_pnts,self.ctrl_pnts,MU[d,:])
+                warped = cv2.resize(warped,(256,256),interpolation=cv2.INTER_LINEAR)
+                Wimages.append(warped.copy())
+        Wimages = np.array(Wimages)
+        print(f"Wimages shape:: {Wimages.shape}")
         ## MU :[#Sims,mu_dim]
         ## Wimages: [#Sims,256,256,3]
-        #return MU,Wimages  
-        return MU
+        return MU,Wimages  
+        #return MU
     
     def Z2X(self, Z):
         ndisp = Z.shape[0]

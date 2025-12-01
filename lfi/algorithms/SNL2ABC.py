@@ -11,7 +11,7 @@ from lfi.utils import umath, uos
 from lfi.utils import distributions
 from lfi.utils import discrepancy
 from lfi.algorithms import ABC_algorithms
-from lfi.statnet.statnets import ISN, MSN, SSN
+from lfi.statnet.statnets import ISN, MSN, SSN , ISN_img
 from lfi.neuralde import MAF, MDN
 
 
@@ -69,7 +69,8 @@ class SNL2_ABC(ABC_algorithms.Base_ABC):
         [n, dim] = all_stats.size()
         print('all_stats.size()', all_stats.size())
         if self.hyperparams.nde == 'MAF':
-            net = MAF.MAF(n_blocks=5, n_inputs=dim, n_hidden=50, n_cond_inputs=self.problem.K)
+            #net = MAF.MAF(n_blocks=5, n_inputs=dim, n_hidden=50, n_cond_inputs=self.problem.K)
+            net = MAF.MAF(n_blocks=5, n_inputs=dim, n_hidden=80, n_cond_inputs=self.problem.K)
         if self.hyperparams.nde == 'MDN':
             net = MDN.MDN(n_in=self.problem.K, n_hidden=50, n_out=dim, K=8)
         net.train().to(self.device)
@@ -85,7 +86,8 @@ class SNL2_ABC(ABC_algorithms.Base_ABC):
         [n, dim] = all_stats.size()
         h = self.problem.K*2
         print('summary statistic dim =', h, 'original dim =', dim)
-        architecture = [dim] + [100, 100, h]    
+        #architecture = [dim] + [100, 100, h]
+        architecture = [dim] + [100, 150,100, h]    
         print('architecture', architecture)
         if self.hyperparams.stat == 'infomax':
             net = ISN(architecture, dim_y=self.problem.K, hyperparams=self.hyperparams)
@@ -179,8 +181,6 @@ class SNL2_ABC(ABC_algorithms.Base_ABC):
 
         
 
-
-
 class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
 
     '''
@@ -221,15 +221,20 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
         # no autoencoder, directly return s
         if self.stat_net is None: 
             s = x
-            return s
+            return torch.tensor(x).float()#s
         # convert raw data to summary stat: s = S(x)
-        else:
+        #else:
+        #    s = self.stat_net.encode(torch.tensor(x).float())
+        #    return s.detach().cpu().numpy()
+        x = torch.tensor(x).float().to(self.device)
+        with torch.no_grad():
             s = self.stat_net.encode(torch.tensor(x).float())
-            return s.detach().cpu().numpy()
+        return s  # stays on GPU
             
     def fit_nde(self):
         print('\n > fitting nde')
-        all_stats = torch.tensor(self.convert_stat(np.vstack(self.all_stats[0:self.l+1]))).float().to(self.device)
+        #all_stats = torch.tensor(self.convert_stat(np.concat(self.all_stats[0:self.l+1],axis=0))).float().to(self.device)
+        all_stats = self.convert_stat(np.concat(self.all_stats[0:self.l+1],axis=0)) #.float().to(self.device)
         all_samples = torch.tensor(np.vstack(self.all_samples[0:self.l+1])).float().to(self.device)
         [n, dim] = all_stats.size()
         print('all_stats.size()', all_stats.size())
@@ -249,12 +254,13 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
         """
         print('\n > fitting encoder')
         # All simulated images
-        all_stats = torch.tensor(np.vstack(self.all_stats[0:self.l+1])).float().to(self.device)
-        
+        all_stats = torch.tensor(np.concat(self.all_stats[0:self.l+1],axis=0)).float().to(self.device)
+        print(f"learn stat, all_stats: {all_stats.shape}")
         # All sampled thetas
         all_samples = torch.tensor(np.vstack(self.all_samples[0:self.l+1])).float().to(self.device)
         
-        [n, dim] = all_stats.size()
+        #[n, dim] = all_stats.size()
+        n,dim = all_stats.size()[0],72
         h = self.problem.K*2
         print('summary statistic dim =', h, 'original dim =', dim)
         architecture = [dim] + [100, 100, h] ## <<< Change this stats architecture
@@ -262,7 +268,7 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
         
         ## Select the statistic network
         if self.hyperparams.stat == 'infomax':
-            net = ISN(architecture, dim_y=self.problem.K, hyperparams=self.hyperparams)
+            net = ISN_img(architecture, dim_y=self.problem.K, hyperparams=self.hyperparams)
         if self.hyperparams.stat == 'moment':
             net = MSN(architecture, dim_y=self.problem.K, hyperparams=self.hyperparams)
         if self.hyperparams.stat == 'score':
@@ -275,6 +281,7 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
         self.stat_array.append(net)
 
     def sample_from_nde(self):
+        print(">Sampling from NDE")
         net = self.nde_net
         net.eval()
         # pilot run for rej sampling
@@ -285,7 +292,9 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
                 ll = self.log_likelihood(theta)
                 if ll > self.max_ll: self.max_ll = ll
         # rejection sampling
+        cnt = 0
         while True:
+            cnt +=1
             theta = self.problem.sample_from_prior()
             prob_accept = self.log_likelihood(theta) - self.max_ll
             u = distributions.uniform.draw_samples(0, 1, 1)[0]
@@ -299,7 +308,8 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
             '''
             net = self.nde_net
             net.eval()
-            y_obs, theta = self.convert_stat(self.whiten(self.y_obs)), theta
+            #y_obs, theta = self.convert_stat(self.whiten(self.y_obs)), theta
+            y_obs, theta = self.convert_stat(self.img_obs), theta
             y_obs, theta = torch.tensor(y_obs).float(), torch.tensor(theta).float().view(1, -1)
             log_probs = net.log_probs(inputs=y_obs, cond_inputs=theta)
             return log_probs.item()
@@ -309,8 +319,10 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
             '''
             net = self.stat_net
             net.eval()
-            y_obs, theta = self.y_obs, theta
-            y_obs, theta = torch.tensor(y_obs).float(), torch.tensor(theta).float().view(1, -1)
+            #y_obs, theta = self.y_obs, theta
+            y_obs, theta = self.img_obs, theta
+            #y_obs, theta = torch.tensor(y_obs).float(), torch.tensor(theta).float().view(1, -1)
+            y_obs, theta = torch.tensor(y_obs).float(), torch.tensor(theta).float()
             log_probs = net.log_likelihood(y_obs, theta)
             return log_probs.view(-1).item()
         
@@ -348,7 +360,7 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
                 self.all_stats = all_stats
                 self.all_samples = all_samples
             self.learn_stat() # Train the Stat Net with: (Raw images,thetas) 
-            self.fit_nde() # Train the Neural Density Estimator p(theta|X_o)
+            self.fit_nde() # Train the Neural Density Estimator p(theta|S(X_o))
             self.prior = self.sample_from_nde # Sample a new theta theta~p(theta|X_o)
             print('\n')
         self.num_sim = total_num_sim

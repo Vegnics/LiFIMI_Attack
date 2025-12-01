@@ -85,7 +85,8 @@ class EncodeLayer(nn.Module):
         self.dropout = False if not hasattr(hyperparams, 'dropout') or hyperparams is None else hyperparams.dropout 
         self.main = nn.Sequential( 
            *(nn.Linear(architecture[i+1], architecture[i+2], bias=True) for i in range(len(architecture)-3)),
-        )  
+        )  ### <<< Check this
+        print(f"Out front end: {architecture[1]}")
         if self.type == 'plain':
             self.plain = nn.Linear(architecture[0], architecture[1], bias=True)
         if self.type == 'iid':
@@ -107,6 +108,21 @@ class EncodeLayer(nn.Module):
                  nn.ReLU(),
                  nn.Flatten(),
                  nn.Linear(50*(int(architecture[0]**0.5)-1)**2, architecture[1])# d = D - (K-1)L
+            )
+        if self.type == 'cnnimg':
+            ## Assuming the inputs are rgb images (256 -> 8)
+            self.cnnimg = nn.Sequential(
+                 nn.Conv2d(in_channels=3, out_channels=8, kernel_size=3, stride=1,padding=1),
+                 nn.ReLU(),
+                 nn.Conv2d(in_channels=8, out_channels=4, kernel_size=5, stride=2,padding=2),
+                 nn.ReLU(),
+                 nn.Conv2d(in_channels=4, out_channels=4, kernel_size=5, stride=2,padding=2),
+                 nn.ReLU(),
+                 nn.Conv2d(in_channels=4, out_channels=4, kernel_size=5, stride=2,padding=2),
+                 nn.ReLU(),
+                 nn.MaxPool2d(kernel_size=(4,4),stride=4),
+                 nn.Flatten(),
+                 nn.Linear(4*8*8, architecture[1])# d = D - (K-1)L
             )
         self.drop = nn.Dropout(p=0.20)
         self.out = nn.Sequential(
@@ -135,7 +151,11 @@ class EncodeLayer(nn.Module):
             x = self.cnn2d(x)    # n*k
         # default
         if self.type == 'plain':
-            x = self.plain(x) 
+            x = self.plain(x)
+        if self.type == 'cnnimg':
+            ## Convert to channels first
+            imgs = torch.transpose(x,-1,1)
+            x = self.cnnimg(imgs) 
         return x
         
     def forward(self, x):
