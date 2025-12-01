@@ -221,20 +221,20 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
         # no autoencoder, directly return s
         if self.stat_net is None: 
             s = x
-            return torch.tensor(x).float()#s
+            return s #torch.tensor(x).float()#s
         # convert raw data to summary stat: s = S(x)
-        #else:
-        #    s = self.stat_net.encode(torch.tensor(x).float())
-        #    return s.detach().cpu().numpy()
-        x = torch.tensor(x).float().to(self.device)
-        with torch.no_grad():
+        else:
             s = self.stat_net.encode(torch.tensor(x).float())
-        return s  # stays on GPU
+            return s.detach().cpu().numpy()
+        #x = torch.tensor(x).float().to(self.device)
+        #with torch.no_grad():
+        #    s = self.stat_net.encode(torch.tensor(x).float())
+        #return s  # stays on GPU
             
     def fit_nde(self):
         print('\n > fitting nde')
-        #all_stats = torch.tensor(self.convert_stat(np.concat(self.all_stats[0:self.l+1],axis=0))).float().to(self.device)
-        all_stats = self.convert_stat(np.concat(self.all_stats[0:self.l+1],axis=0)) #.float().to(self.device)
+        all_stats = torch.tensor(self.convert_stat(np.concat(self.all_stats[0:self.l+1],axis=0))).float().to(self.device)
+        #all_stats = self.convert_stat(np.concat(self.all_stats[0:self.l+1],axis=0)) #.float().to(self.device)
         all_samples = torch.tensor(np.vstack(self.all_samples[0:self.l+1])).float().to(self.device)
         [n, dim] = all_stats.size()
         print('all_stats.size()', all_stats.size())

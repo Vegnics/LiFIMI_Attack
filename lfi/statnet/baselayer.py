@@ -124,6 +124,7 @@ class EncodeLayer(nn.Module):
                  nn.Flatten(),
                  nn.Linear(4*8*8, architecture[1])# d = D - (K-1)L
             )
+            
         self.drop = nn.Dropout(p=0.20)
         self.out = nn.Sequential(
             nn.Linear(architecture[-2], architecture[-1], bias=True),
