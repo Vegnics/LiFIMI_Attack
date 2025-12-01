@@ -281,7 +281,7 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
         self.stat_array.append(net)
 
     def sample_from_nde(self):
-        print(">Sampling from NDE")
+        #print(">Sampling from NDE")
         net = self.nde_net
         net.eval()
         # pilot run for rej sampling
@@ -309,6 +309,7 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
             net = self.nde_net
             net.eval()
             #y_obs, theta = self.convert_stat(self.whiten(self.y_obs)), theta
+            #print(f"SNL LOGLIKE imgs: {self.img_obs.shape}")
             y_obs, theta = self.convert_stat(self.img_obs), theta
             y_obs, theta = torch.tensor(y_obs).float(), torch.tensor(theta).float().view(1, -1)
             log_probs = net.log_probs(inputs=y_obs, cond_inputs=theta)

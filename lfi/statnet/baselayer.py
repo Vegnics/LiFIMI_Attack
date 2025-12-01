@@ -154,7 +154,8 @@ class EncodeLayer(nn.Module):
             x = self.plain(x)
         if self.type == 'cnnimg':
             ## Convert to channels first
-            imgs = torch.transpose(x,-1,1)
+            imgs = torch.transpose(x,-1,1).clone()
+            #print(f"Front end: {x.size()} -> {imgs.size()}")
             x = self.cnnimg(imgs) 
         return x
         

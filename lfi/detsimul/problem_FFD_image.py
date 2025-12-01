@@ -62,7 +62,7 @@ class FFD_Image_Problem(ABC_problems.ABC_Problem_Image):
         if self.stat == 'raw':
             idx = np.random.randint(low=0,high=data.shape[0])
             stat = data
-            print(f"Images shape:: {images.shape}")
+            #print(f"Images shape:: {images.shape}")
             return stat[idx].reshape(1,-1),images[idx,:,:,:]
         else:
             raise Exception("No handcrafted statistics are available for this problem") 
@@ -204,7 +204,7 @@ class FFD_Image_Problem(ABC_problems.ABC_Problem_Image):
                 warped = cv2.resize(warped,(256,256),interpolation=cv2.INTER_LINEAR)
                 Wimages.append(warped.copy())
         Wimages = np.array(Wimages)
-        print(f"Wimages shape:: {Wimages.shape}")
+        #print(f"Wimages shape:: {Wimages.shape}")
         ## MU :[#Sims,mu_dim]
         ## Wimages: [#Sims,256,256,3]
         return MU,Wimages  
