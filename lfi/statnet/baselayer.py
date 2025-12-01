@@ -109,6 +109,7 @@ class EncodeLayer(nn.Module):
                  nn.Flatten(),
                  nn.Linear(50*(int(architecture[0]**0.5)-1)**2, architecture[1])# d = D - (K-1)L
             )
+        """
         if self.type == 'cnnimg':
             ## Assuming the inputs are rgb images (256 -> 8)
             self.cnnimg = nn.Sequential(
@@ -119,6 +120,23 @@ class EncodeLayer(nn.Module):
                  nn.Conv2d(in_channels=4, out_channels=4, kernel_size=5, stride=2,padding=2),
                  nn.ReLU(),
                  nn.Conv2d(in_channels=4, out_channels=4, kernel_size=5, stride=2,padding=2),
+                 nn.ReLU(),
+                 nn.MaxPool2d(kernel_size=(4,4),stride=4),
+                 nn.Flatten(),
+                 nn.Linear(4*8*8, architecture[1])# d = D - (K-1)L
+            )
+        """
+        self.cnnimg = nn.Sequential(
+                 nn.Conv2d(in_channels=3, out_channels=32, kernel_size=3, stride=1,padding=1),
+                 nn.ReLU(),
+                 nn.BatchNorm2d(32),
+                 nn.Conv2d(in_channels=32, out_channels=32, kernel_size=5, stride=2,padding=2),
+                 nn.ReLU(),
+                 nn.BatchNorm2d(32),
+                 nn.Conv2d(in_channels=32, out_channels=16, kernel_size=5, stride=2,padding=2),
+                 nn.ReLU(),
+                 nn.BatchNorm2d(16),
+                 nn.Conv2d(in_channels=16, out_channels=4, kernel_size=5, stride=2,padding=2),
                  nn.ReLU(),
                  nn.MaxPool2d(kernel_size=(4,4),stride=4),
                  nn.Flatten(),
