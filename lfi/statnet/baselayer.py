@@ -29,7 +29,7 @@ class ScoreLayer(nn.Module):
 class CriticLayer(nn.Module): 
     def __init__(self, architecture, dim_y, hyperparams=None):
         super().__init__()       
-        dim_x, dim_y, dim_hidden = architecture[-1], dim_y, 200
+        dim_x, dim_y, dim_hidden = 5*architecture[-1], dim_y, 200
         # WD case; need to do spectral normalization
         if hyperparams.estimator == 'WD':
             self.main = nn.Sequential(
