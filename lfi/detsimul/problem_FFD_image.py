@@ -197,10 +197,11 @@ class FFD_Image_Problem(ABC_problems.ABC_Problem_Image):
         #imgsearch = self.img_folder+"/*.jpg"
         #for fname in glob(self.img_folder+"/*.jpg")[0:2]:
         #for fname in glob(imgsearch)[0:2]:
+        FFD_K = 3.0
         for img in self.work_imgs:
             #img = cv2.imread(fname,1)
             for d in range(MU.shape[0]):
-                warped = self.ffd_image_warp(img,self.ctrl_pnts,self.ctrl_pnts,MU[d,:])
+                warped = self.ffd_image_warp(img,self.ctrl_pnts,self.ctrl_pnts,MU[d,:]*FFD_K)
                 warped = cv2.resize(warped,(256,256),interpolation=cv2.INTER_LINEAR)
                 Wimages.append(warped.copy())
         Wimages = np.array(Wimages)
