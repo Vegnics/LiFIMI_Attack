@@ -125,7 +125,7 @@ class EncodeLayer(nn.Module):
                  nn.Flatten(),
                  nn.Linear(4*8*8, architecture[1])# d = D - (K-1)L
             )
-        """
+        
         self.cnnimg = nn.Sequential(
                  nn.Conv2d(in_channels=3, out_channels=32, kernel_size=3, stride=1,padding=1),
                  nn.ReLU(),
@@ -141,6 +141,39 @@ class EncodeLayer(nn.Module):
                  nn.MaxPool2d(kernel_size=(4,4),stride=4),
                  nn.Flatten(),
                  nn.Linear(4*8*8, architecture[1])# d = D - (K-1)L
+            )
+        """
+        if self.type == 'cnnimg':
+            self.cnnimg = nn.Sequential(
+                # 256x256x3 -> 256x256x32
+                # Depthwise: 3 -> 3, then Pointwise: 3 -> 32
+                nn.Conv2d(in_channels=3, out_channels=3, kernel_size=3, stride=1, padding=1, groups=3),
+                nn.Conv2d(in_channels=3, out_channels=32, kernel_size=1, stride=1, padding=0),
+                nn.ReLU(),
+                nn.BatchNorm2d(32),
+
+                # 256x256x32 -> 128x128x32
+                nn.Conv2d(in_channels=32, out_channels=32, kernel_size=5, stride=2, padding=2, groups=32),  # depthwise
+                nn.Conv2d(in_channels=32, out_channels=32, kernel_size=1, stride=1, padding=0),            # pointwise
+                nn.ReLU(),
+                nn.BatchNorm2d(32),
+
+                # 128x128x32 -> 64x64x16
+                nn.Conv2d(in_channels=32, out_channels=32, kernel_size=5, stride=2, padding=2, groups=32),  # depthwise
+                nn.Conv2d(in_channels=32, out_channels=16, kernel_size=1, stride=1, padding=0),            # pointwise
+                nn.ReLU(),
+                nn.BatchNorm2d(16),
+
+                # 64x64x16 -> 32x32x4
+                nn.Conv2d(in_channels=16, out_channels=16, kernel_size=5, stride=2, padding=2, groups=16),  # depthwise
+                nn.Conv2d(in_channels=16, out_channels=4, kernel_size=1, stride=1, padding=0),             # pointwise
+                nn.ReLU(),
+
+                # 32x32x4 -> 8x8x4
+                nn.MaxPool2d(kernel_size=(4, 4), stride=4),
+
+                nn.Flatten(),
+                nn.Linear(4 * 8 * 8, architecture[1])  # same as before
             )
             
         self.drop = nn.Dropout(p=0.20)

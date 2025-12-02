@@ -73,6 +73,8 @@ class SNL2_ABC(ABC_algorithms.Base_ABC):
             net = MAF.MAF(n_blocks=5, n_inputs=dim, n_hidden=80, n_cond_inputs=self.problem.K)
         if self.hyperparams.nde == 'MDN':
             net = MDN.MDN(n_in=self.problem.K, n_hidden=50, n_out=dim, K=8)
+        if self.nde_net is not None:
+            net.load_state_dict(deepcopy(self.nde_net.state_dict()))
         net.train().to(self.device)
         net.learn(inputs=all_stats, cond_inputs=all_samples)
         net = net.eval().cpu()
@@ -95,6 +97,8 @@ class SNL2_ABC(ABC_algorithms.Base_ABC):
             net = MSN(architecture, dim_y=self.problem.K, hyperparams=self.hyperparams)
         if self.hyperparams.stat == 'score':
             net = SSN(architecture, dim_y=self.problem.K, hyperparams=self.hyperparams)
+        if self.stat_net is not None:
+            net.load_state_dict(deepcopy(self.stat_net.state_dict()))
         net.train().to(self.device)
         net.learn(x=all_stats, y=all_samples)
         net = net.eval().cpu()
