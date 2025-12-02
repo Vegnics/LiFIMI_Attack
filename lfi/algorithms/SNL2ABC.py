@@ -249,6 +249,7 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
         if self.nde_net is not None:
             print("> Loading NDENet weights ...")
             net.load_state_dict(deepcopy(self.nde_net.state_dict()))
+        print("NDE net arch: \n",net)
         net.train().to(self.device)
         net.learn(inputs=all_stats, cond_inputs=all_samples)
         net = net.eval().cpu()
@@ -283,6 +284,7 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
         if self.stat_net is not None:
             print("> Loading StatNet weights ...")
             net.load_state_dict(deepcopy(self.stat_net.state_dict()))
+        print("Summary statistics arch: \n",net)
         net.train().to(self.device)
         net.learn(x=all_stats, y=all_samples)
         net = net.eval().cpu()

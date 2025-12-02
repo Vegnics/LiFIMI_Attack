@@ -177,9 +177,14 @@ class EncodeLayer(nn.Module):
             )
             
         self.drop = nn.Dropout(p=0.20)
-        self.out = nn.Sequential(
-            nn.Linear(architecture[-2], architecture[-1], bias=True),
-        )
+        if self.type == 'cnnimg':
+            self.out = nn.Sequential(
+                nn.Linear(architecture[-2], 5*architecture[-1], bias=True),
+            )
+        else:
+            self.out = nn.Sequential(
+                nn.Linear(architecture[-2], 2*architecture[-1], bias=True),
+            )
         self.N_layers = len(architecture) - 1
         self.architecture = architecture
             
