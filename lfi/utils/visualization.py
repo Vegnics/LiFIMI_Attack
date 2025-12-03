@@ -27,7 +27,7 @@ def plot_axline(x,y):
     plt.axhline(y=y,color='k', linewidth=0.75)
 
 #"""
-def plot_likelihood(samples, log_likelihood_function, dimensions=(0,1),bounded = True): 
+def plot_likelihood(samples, log_likelihood_function, dimensions=(0,1),bounded = True,return_data=False): 
     # Compute log-likelihood values
     n, d = samples.shape
     if d == 1:
@@ -57,7 +57,8 @@ def plot_likelihood(samples, log_likelihood_function, dimensions=(0,1),bounded =
     #plt.figure()
     #plt.imshow(P,cmap="jet")
     plot_contour(X, Y, P, R, r'Plot likelihood p($\theta|S_{ll}(X_o))$', r'$\theta_{}$'.format(dimensions[0]), r'$\theta_{}$'.format(dimensions[1]),bounded)
-
+    if return_data:
+        return X, Y, P
 #"""
 
 """
