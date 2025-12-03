@@ -263,12 +263,14 @@ class FFD_Image_Problem(ABC_problems.ABC_Problem_Image):
         #print(ll.shape)
         return ll
     """
+
+    """
     
     def log_likelihood(self, theta):
-        """
+        -"-""
         Log-likelihood in PCA space using 3 components.
         We model z = PCA(x) ~ N(mu_pca(theta), var * I_3)
-        """
+        "-""
 
         var = float(theta[1])
         var = max(var, 1e-6)   # avoid degenerate var
@@ -285,6 +287,28 @@ class FFD_Image_Problem(ABC_problems.ABC_Problem_Image):
         # Log-likelihood
         ll = np.log(pdf_vals + 1e-12)
         return ll.mean()
+    """
+
+    def log_likelihood(self, theta):
+        """
+        Oracle log-likelihood in μ-space, matching the PCA version's scale:
+        returns mean log p(mu | theta) over observed μ's.
+        """
+        theta0 = float(theta[0])          # mean parameter
+        var    = float(theta[1])          # variance parameter
+        var    = max(var, 1e-6)           # avoid degeneracy
+
+        mu_obs = self.data_obs              # shape (N, D)
+        N, D   = mu_obs.shape
+
+        # Mean vector is theta0 * 1; broadcast theta0
+        diff = mu_obs - theta0            # (N, D)
+        sq_norm = np.sum(diff**2, axis=1) # (N,)
+
+        # Per-sample log pdf of N(theta0*1, var*I_D)
+        ll_i = -0.5 * D * np.log(2 * np.pi * var) - 0.5 * sq_norm / var  # (N,)
+        return ll_i.mean()
+
     
     def log_pdf(self,data, theta):
         '''
