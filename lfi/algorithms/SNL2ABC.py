@@ -263,7 +263,7 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
         print('\n > fitting encoder')
         # All simulated images
         all_stats = torch.tensor(np.concat(self.all_stats[0:self.l+1],axis=0)).float().to(self.device)
-        #print(f"learn stat, all_stats: {all_stats.shape}")
+        print(f"learn stat, all_stats: {all_stats.shape}")
         # All sampled thetas
         all_samples = torch.tensor(np.vstack(self.all_samples[0:self.l+1])).float().to(self.device)
         
@@ -373,6 +373,18 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
                 self.all_samples = all_samples
             self.learn_stat() # Train the Stat Net with: (Raw images,thetas) 
             self.fit_nde() # Train the Neural Density Estimator p(theta|S(X_o))
+            stats_all   = np.vstack(self.all_stats)       # (N_total, ... flattened later inside learn_stat)
+            samples_all = np.vstack(self.all_samples)     # (N_total, K)
+
+            N_total = stats_all.shape[0]
+            keep = min(200, N_total)
+            idx = np.random.choice(N_total, size=keep, replace=False)
+
+            self.all_stats   = [stats_all[idx]]
+            self.all_samples = [samples_all[idx]]
+            #selsamples = np.random.randint(low=0,high=len(self.all_stats),size=200)
+            #self.all_stats = list(self.all_stats[selsamples])
+            #self.all_samples = list(self.all_samples[selsamples])
             self.prior = self.sample_from_nde # Sample a new theta theta~p(theta|X_o)
             print('\n')
         self.num_sim = total_num_sim
