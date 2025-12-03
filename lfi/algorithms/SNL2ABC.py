@@ -220,6 +220,7 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
         self.stat_array = []     
         self.proposal_array = []                        # the proposal used at each round
         self.hyperparams = hyperparams
+        self.sample_keep = 200
  
     def convert_stat(self, x): 
         # no autoencoder, directly return s
@@ -376,8 +377,9 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
             stats_all   = np.vstack(self.all_stats)       # (N_total, ... flattened later inside learn_stat)
             samples_all = np.vstack(self.all_samples)     # (N_total, K)
 
+            sample_keep = self.sample_keep
             N_total = stats_all.shape[0]
-            keep = min(200, N_total)
+            keep = min(sample_keep, N_total)
             idx = np.random.choice(N_total, size=keep, replace=False)
 
             self.all_stats   = [stats_all[idx]]
