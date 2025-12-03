@@ -249,7 +249,7 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
         if self.nde_net is not None:
             print("> Loading NDENet weights ...")
             net.load_state_dict(deepcopy(self.nde_net.state_dict()))
-        print("NDE net arch: \n",net)
+        #print("NDE net arch: \n",net)
         net.train().to(self.device)
         net.learn(inputs=all_stats, cond_inputs=all_samples)
         net = net.eval().cpu()
@@ -263,7 +263,7 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
         print('\n > fitting encoder')
         # All simulated images
         all_stats = torch.tensor(np.concat(self.all_stats[0:self.l+1],axis=0)).float().to(self.device)
-        print(f"learn stat, all_stats: {all_stats.shape}")
+        #print(f"learn stat, all_stats: {all_stats.shape}")
         # All sampled thetas
         all_samples = torch.tensor(np.vstack(self.all_samples[0:self.l+1])).float().to(self.device)
         
@@ -284,7 +284,7 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
         if self.stat_net is not None:
             print("> Loading StatNet weights ...")
             net.load_state_dict(deepcopy(self.stat_net.state_dict()))
-        print("Summary statistics arch: \n",net)
+        #print("Summary statistics arch: \n",net)
         net.train().to(self.device)
         net.learn(x=all_stats, y=all_samples)
         net = net.eval().cpu()
