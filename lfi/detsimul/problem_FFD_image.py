@@ -36,6 +36,7 @@ class FFD_Image_Problem(ABC_problems.ABC_Problem_Image):
         self.out_img_folder = out_folder
         self.ctrl_pnts = 6
         self.work_imgs = []
+        self.ffd_scale = 1.0
     
     def get_work_imgs(self):
         """
@@ -73,7 +74,6 @@ class FFD_Image_Problem(ABC_problems.ABC_Problem_Image):
         """
         t2 = t * t
         t3 = t * t2
-
         B0 = (1.0 - t)**3 / 6.0
         B1 = (3.0 * t3 - 6.0 * t2 + 4.0) / 6.0
         B2 = (-3.0 * t3 + 3.0 * t2 + 3.0 * t + 1.0) / 6.0
@@ -189,41 +189,18 @@ class FFD_Image_Problem(ABC_problems.ABC_Problem_Image):
             print(f"Simulator nsim: {n_sim}")
             MU = distributions.normal_nd.draw_samples(nmean,cov,n_sim)
         # Convert mu to x (images)
-        #ndisp = Z.shape[0]
-        #print(f"==== Warping===>{ndisp} samples")
-        #cnt = 1
-        
         Wimages = [] 
-        #imgsearch = self.img_folder+"/*.jpg"
-        #for fname in glob(self.img_folder+"/*.jpg")[0:2]:
-        #for fname in glob(imgsearch)[0:2]:
-        FFD_K = 3.0
+        FFD_K = self.ffd_scale # This scaling factor is employed to modify amount of information about
+                               # theta in the images. It just increases the level of warping.
         for img in self.work_imgs:
-            #img = cv2.imread(fname,1)
             for d in range(MU.shape[0]):
                 warped = self.ffd_image_warp(img,self.ctrl_pnts,self.ctrl_pnts,MU[d,:]*FFD_K)
                 warped = cv2.resize(warped,(256,256),interpolation=cv2.INTER_LINEAR)
                 Wimages.append(warped.copy())
         Wimages = np.array(Wimages)
-        #print(f"Wimages shape:: {Wimages.shape}")
         ## MU :[#Sims,mu_dim]
         ## Wimages: [#Sims,256,256,3]
         return MU,Wimages  
-        #return MU
-    
-    def Z2X(self, Z):
-        ndisp = Z.shape[0]
-        print(f"==== Warping===>{ndisp} samples")
-        cnt = 1
-        ffds = []
-        for fname in glob(self.img_folder+"/*.jpg"):
-            img = cv2.imread(fname,1)
-            for d in range(ndisp):
-                warped = self.ffd_image_warp(img,self.ctrl_pnts,self.ctrl_pnts,Z[d,:])
-                warped = cv2.resize(warped,(256,256),interpolation=cv2.INTER_LINEAR)
-                cv2.imwrite(os.path.join(self.out_img_folder,f"{cnt:05d}.jpg"),warped)
-                cnt += 1
-        return self.out_img_folder
     
     def compute_pca(self, n_components=3):
         """
@@ -257,7 +234,7 @@ class FFD_Image_Problem(ABC_problems.ABC_Problem_Image):
         self.pca_basis = W                        # PCA kernel
         
         Xc = self.data_obs - self.pca_mean    # (N,72)
-        self.data_obs_pca = Xc @ self.pca_basis   # (N,3)
+        self.data_obs_pca = Xc @ self.pca_basis   # (N,n_components)
         return
     
     """
@@ -297,10 +274,10 @@ class FFD_Image_Problem(ABC_problems.ABC_Problem_Image):
         var = max(var, 1e-6)   # avoid degenerate var
 
         mean_full = theta[0] * np.ones(self.mudim)      # (72,)
-        W = self.pca_basis                               # (72, 3)
+        W = self.pca_basis                               # (72, n_components)
         mu_pca = (mean_full - self.pca_mean) @ W         # (3,)
-        Z = self.data_obs_pca                            # shape (N, 3)
-        cov_pca = var * np.eye(self.pca_dim)             # (3,3)
+        Z = self.data_obs_pca                            # shape (N, n_components)
+        cov_pca = var * np.eye(self.pca_dim)             # (n_components,n_components)
 
         # Compute per-sample pdf
         pdf_vals = distributions.normal_nd.pdf(Z, mu_pca, cov_pca)
@@ -397,7 +374,7 @@ class FFD_Image_Problem(ABC_problems.ABC_Problem_Image):
         # overlay sample scatter
         plt.scatter(Z_samples[:,0], Z_samples[:,1], s=8, color='black', alpha=0.25)
 
-        plt.title(r"$p(x|\theta)$ projected onto first 2 PCA components")
+        plt.title(r"$p(\mu|\theta)$ projected onto first 2 PCA components")
         plt.xlabel("PC 1")
         plt.ylabel("PC 2")
         plt.tight_layout()
