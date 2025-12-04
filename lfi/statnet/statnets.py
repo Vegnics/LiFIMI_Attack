@@ -234,7 +234,8 @@ class ISN_img(nn.Module):
             mi = AB**0.5/(AA**0.5 * BB**0.5)**0.5
         # [C]. Donsker-Varadhan Representation (MINE, ICML'18)
         if self.estimator == 'DV':
-            m, d = z.size()
+            #m, d = z.size()
+            m,_,_,_ = z.size()
             z, y = self.encode(z), self.encode2(y)
             idx_pos = []
             idx_neg = []
