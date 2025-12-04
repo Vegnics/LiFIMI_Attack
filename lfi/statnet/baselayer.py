@@ -29,7 +29,7 @@ class ScoreLayer(nn.Module):
 class CriticLayer(nn.Module): 
     def __init__(self, architecture, dim_y, hyperparams=None):
         super().__init__()       
-        dim_x, dim_y, dim_hidden = 5*architecture[-1], dim_y, 200
+        dim_x, dim_y, dim_hidden = 5*architecture[-1], dim_y, 256#200
         # WD case; need to do spectral normalization
         if hyperparams.estimator == 'WD':
             self.main = nn.Sequential(
@@ -39,14 +39,23 @@ class CriticLayer(nn.Module):
         # Other cases; need to do noting
         else:
             self.main = nn.Sequential(
-                nn.Linear(dim_x + dim_y, dim_hidden),
+                nn.Linear(dim_x + dim_y, dim_hidden//2),
+                nn.ReLU(inplace=True),
+                nn.Linear(dim_hidden//2, dim_hidden),
+                nn.ReLU(inplace=True),
+                nn.Linear(dim_hidden, dim_hidden),
+                nn.ReLU(inplace=True),
+                nn.Linear(dim_hidden, dim_hidden),
+                nn.ReLU(inplace=True),
+                nn.Linear(dim_hidden, dim_hidden//2),
+                nn.ReLU(inplace=True),
             )
-            self.out = nn.Linear(dim_hidden, 1)
+            self.out = nn.Linear(dim_hidden//2, 1)
    
     def forward(self, x, y):
         h = torch.cat((x,y), dim=1)
         h = self.main(h) 
-        h = torch.tanh(h)
+        #h = torch.tanh(h)
         out = self.out(h)
         return out 
     
