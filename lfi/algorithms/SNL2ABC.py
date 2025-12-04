@@ -239,7 +239,7 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
     def fit_nde(self):
         print('\n > fitting nde')
         allstatsnp = self.convert_stat(np.concatenate(self.all_stats[0:self.l+1],axis=0))
-        idx = np.random.choice(allstatsnp.shape[0], size=keep, replace=False)
+        idx = np.random.choice(allstatsnp.shape[0], size=allstatsnp.shape[0], replace=False)
         all_stats = torch.tensor(allstatsnp[idx]).float().to(self.device)
         print(f"learn stat, all_stats: {all_stats.shape}")
         # All sampled thetas
@@ -274,7 +274,7 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
         print('\n > fitting encoder')
         # All simulated images
         allstatsnp = np.concatenate(self.all_stats[0:self.l+1],axis=0)
-        idx = np.random.choice(allstatsnp.shape[0], size=keep, replace=False)
+        idx = np.random.choice(allstatsnp.shape[0], size=allstatsnp.shape[0], replace=False)
         all_stats = torch.tensor(allstatsnp[idx]).float().to(self.device)
         print(f"learn stat, all_stats: {all_stats.shape}")
         # All sampled thetas
