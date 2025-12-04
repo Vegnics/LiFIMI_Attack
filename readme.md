@@ -19,6 +19,15 @@ The diagram of the work by [Chen et al. (ICLR 2021)](https://openreview.net/pdf?
 |Paulo|d12922028||
 |Chevady|||
 |Laguna|||
+
+----------------------------------
+**Proposed experiments**
+|Experiments|Purpose|Description|
+|-----------|-------|-------|
+|FFD parameter scaling| Since the variance used to generate the deformation parameters are very small (images are not very warped) we need to scale up these parameters|Fix the MI estimator to JSD, fix the NDE to MAF, Switch between scales $K\in\{1.0,3.0,5.0\}$|
+| Different NDEs (Neural Density Estimator)| Verify the impact on using different NDE models|Fix the MI estimator to JSD, fix the scale $K=3.0$, switch between NDE models (MAF or NDN)|
+| Ablations on different MI estimators| The chosen MI estimator is critical for training the statistic network we have to perform ablations on this estimators| Fix the MI estimator, architecture (StatNet,NDE), scale $K=3.0$, and switch the MI estimator between JSD,DC,DV| 
+
 ----------------------------------
 **Basic definitions**
 
