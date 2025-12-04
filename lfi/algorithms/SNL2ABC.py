@@ -238,13 +238,23 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
             
     def fit_nde(self):
         print('\n > fitting nde')
-        all_stats = torch.tensor(self.convert_stat(np.concat(self.all_stats[0:self.l+1],axis=0))).float().to(self.device)
+        allstatsnp = self.convert_stat(np.concatenate(self.all_stats[0:self.l+1],axis=0))
+        idx = np.random.choice(allstatsnp.shape[0], size=keep, replace=False)
+        all_stats = torch.tensor(allstatsnp[idx]).float().to(self.device)
+        print(f"learn stat, all_stats: {all_stats.shape}")
+        # All sampled thetas
+        
+        #all_samples = torch.tensor(np.vstack(self.all_samples[0:self.l+1])).float().to(self.device)
+        allsampnp = np.vstack(self.all_samples[0:self.l+1])
+        all_samples = torch.tensor(allsampnp[idx]).float().to(self.device)
+        
+        #all_stats = torch.tensor(self.convert_stat(np.concat(self.all_stats[0:self.l+1],axis=0))).float().to(self.device)
         #all_stats = self.convert_stat(np.concat(self.all_stats[0:self.l+1],axis=0)) #.float().to(self.device)
-        all_samples = torch.tensor(np.vstack(self.all_samples[0:self.l+1])).float().to(self.device)
+        #all_samples = torch.tensor(np.vstack(self.all_samples[0:self.l+1])).float().to(self.device)
         [n, dim] = all_stats.size()
         print('all_stats.size()', all_stats.size())
         if self.hyperparams.nde == 'MAF':
-            net = MAF.MAF(n_blocks=5, n_inputs=dim, n_hidden=50, n_cond_inputs=self.problem.K,bs=32,lr=1e-4)
+            net = MAF.MAF(n_blocks=5, n_inputs=dim, n_hidden=50, n_cond_inputs=self.problem.K,bs=32,lr=5e-5)
         if self.hyperparams.nde == 'MDN':
             net = MDN.MDN(n_in=self.problem.K, n_hidden=50, n_out=dim, K=8)
         if self.nde_net is not None:
@@ -263,11 +273,16 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
         """
         print('\n > fitting encoder')
         # All simulated images
-        all_stats = torch.tensor(np.concat(self.all_stats[0:self.l+1],axis=0)).float().to(self.device)
+        allstatsnp = np.concatenate(self.all_stats[0:self.l+1],axis=0)
+        idx = np.random.choice(allstatsnp.shape[0], size=keep, replace=False)
+        all_stats = torch.tensor(allstatsnp[idx]).float().to(self.device)
         print(f"learn stat, all_stats: {all_stats.shape}")
         # All sampled thetas
-        all_samples = torch.tensor(np.vstack(self.all_samples[0:self.l+1])).float().to(self.device)
         
+        #all_samples = torch.tensor(np.vstack(self.all_samples[0:self.l+1])).float().to(self.device)
+        allsampnp = np.vstack(self.all_samples[0:self.l+1])
+        all_samples = torch.tensor(allsampnp[idx]).float().to(self.device)
+
         #[n, dim] = all_stats.size()
         n,dim = all_stats.size()[0],72
         h = self.problem.K*2
