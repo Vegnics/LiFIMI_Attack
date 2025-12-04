@@ -15,7 +15,7 @@ class MAF(nn.Sequential):
     """ 
         Mask autoregressive flow
     """
-    def __init__(self, n_blocks, n_inputs, n_hidden, n_cond_inputs):
+    def __init__(self, n_blocks, n_inputs, n_hidden, n_cond_inputs,bs=200,lr=5e-4):
         module = []
         self.bs = 200
         self.lr = 5e-4

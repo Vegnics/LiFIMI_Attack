@@ -244,7 +244,7 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
         [n, dim] = all_stats.size()
         print('all_stats.size()', all_stats.size())
         if self.hyperparams.nde == 'MAF':
-            net = MAF.MAF(n_blocks=5, n_inputs=dim, n_hidden=50, n_cond_inputs=self.problem.K)
+            net = MAF.MAF(n_blocks=5, n_inputs=dim, n_hidden=50, n_cond_inputs=self.problem.K,bs=32,lr=1e-4)
         if self.hyperparams.nde == 'MDN':
             net = MDN.MDN(n_in=self.problem.K, n_hidden=50, n_out=dim, K=8)
         if self.nde_net is not None:
