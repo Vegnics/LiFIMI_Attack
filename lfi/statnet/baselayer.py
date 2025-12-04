@@ -31,6 +31,7 @@ class CriticLayer(nn.Module):
         super().__init__()       
         dim_x, dim_y, dim_hidden = 5*architecture[-1], dim_y, 256#200
         # WD case; need to do spectral normalization
+        self.norm_in = nn.LayerNorm(dim_x + dim_y)
         if hyperparams.estimator == 'WD':
             self.main = nn.Sequential(
                 nn.utils.spectral_norm(nn.Linear(dim_x + dim_y, dim_hidden), n_power_iterations=5),
@@ -41,12 +42,16 @@ class CriticLayer(nn.Module):
             self.main = nn.Sequential(
                 nn.Linear(dim_x + dim_y, dim_hidden//2),
                 nn.ReLU(inplace=True),
+                nn.Dropout(0.15),
                 nn.Linear(dim_hidden//2, dim_hidden),
                 nn.ReLU(inplace=True),
+                nn.Dropout(0.2),
                 nn.Linear(dim_hidden, dim_hidden),
                 nn.ReLU(inplace=True),
+                nn.Dropout(0.2),
                 nn.Linear(dim_hidden, dim_hidden),
                 nn.ReLU(inplace=True),
+                #nn.Dropout(0.2),
                 nn.Linear(dim_hidden, dim_hidden//2),
                 nn.ReLU(inplace=True),
             )
@@ -54,6 +59,7 @@ class CriticLayer(nn.Module):
    
     def forward(self, x, y):
         h = torch.cat((x,y), dim=1)
+        h = self.norm_in(h)
         h = self.main(h) 
         #h = torch.tanh(h)
         out = self.out(h)
