@@ -17,8 +17,8 @@ class MAF(nn.Sequential):
     """
     def __init__(self, n_blocks, n_inputs, n_hidden, n_cond_inputs,bs=200,lr=5e-4):
         module = []
-        self.bs = 200
-        self.lr = 5e-4
+        self.bs = bs#200
+        self.lr = lr #5e-4
         self.wd = 0e-5
         self.n_blocks = n_blocks
         self.n_inputs = n_inputs
