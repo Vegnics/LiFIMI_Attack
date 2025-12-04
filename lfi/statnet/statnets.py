@@ -206,7 +206,7 @@ class ISN_img(nn.Module):
     def MI(self, z, y, n=10):
         # [A]. Jensen-shannon divergence (DeepInfoMax, ICLR'19)
         if self.estimator == 'JSD':
-            m, d = z.size()
+            m,_,_,_ = z.size() 
             z, y = self.encode(z), self.encode2(y) if self.encode_y else y
             idx_pos = []
             idx_neg = []
