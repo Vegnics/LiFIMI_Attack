@@ -27,7 +27,15 @@ def plot_axline(x,y):
     plt.axhline(y=y,color='k', linewidth=0.75)
 
 #"""
-def plot_likelihood(samples, log_likelihood_function, dimensions=(0,1),bounded = True,return_data=False): 
+def plot_likelihood(samples,
+                    log_likelihood_function,
+                    dimensions=(0,1),
+                    bounded = True,
+                    return_data=False,
+                    xmin = None,
+                    xmax = None,
+                    ymin = None,
+                    ymax = None): 
     # Compute log-likelihood values
     n, d = samples.shape
     if d == 1:
@@ -38,7 +46,7 @@ def plot_likelihood(samples, log_likelihood_function, dimensions=(0,1),bounded =
         plt.ylabel(r'$\log p(\theta|x_o)$')
         return
     elif d == 2:
-        X, Y, P = umath.log_likelihood_2D(samples, log_likelihood_function)
+        X, Y, P = umath.log_likelihood_2D(samples, log_likelihood_function,xmin,xmax,ymin,ymax)
     else:
         X, Y, P = umath.log_likelihood_3D(samples, log_likelihood_function, dimensions)
         

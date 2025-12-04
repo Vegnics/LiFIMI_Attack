@@ -140,12 +140,12 @@ def log_likelihood_2D(samples, log_likelihood_function,
 """
 #"""
 
-def log_likelihood_2D(samples, log_likelihood_function):
+def log_likelihood_2D(samples, log_likelihood_function,x_min=None,x_max=None,y_min=None,y_max=None):
     data = samples.transpose()
-    xmin = data[0, 0:].min()
-    xmax = data[0, 0:].max()
-    ymin = data[1, 0:].min()
-    ymax = data[1, 0:].max()
+    xmin = data[0, 0:].min() if x_min is None else x_min
+    xmax = data[0, 0:].max() if x_max is None else x_max
+    ymin = data[1, 0:].min() if y_min is None else y_min
+    ymax = data[1, 0:].max() if y_max is None else y_max
     
     ### Modifying the function to prevent erroneous plots
     ### Find the largest point and re-center
