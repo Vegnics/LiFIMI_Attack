@@ -353,7 +353,9 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
             for _ in range(num_pilot):
                 theta = self.problem.sample_from_prior()
                 thetas_pilot.append(theta)
-            thetas_pilot = np.array(thetas_pilot)
+            print(len(thetas_pilot),thetas_pilot[0].shape)
+            thetas_pilot = np.concat(thetas_pilot,axis=0)
+            print(thetas_pilot.shape())
             thetas_pilot = torch.tensor(thetas_pilot, dtype=torch.float32, device=device)  # (N, K)
 
             with torch.no_grad():
