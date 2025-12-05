@@ -23,7 +23,7 @@ class FFD_Image_Problem(ABC_problems.ABC_Problem_Image):
     def __init__(self,N=500,n=100,image_folder="",out_folder=""):
         self.simulator_args = ['mean', 'var']
         self.prior = [distributions.uniform, distributions.uniform]
-        self.prior_args = np.array([[-5.0, 5.0], [0.001, 100.0]])
+        self.prior_args = np.array([[-5.0, 5.0], [2.0, 80.0]])
         self.true_mean = 0.0
         self.true_var = 120.0
         
