@@ -322,7 +322,7 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
         # pilot run for rej sampling
         if self.max_ll is None:
             self.max_ll = -math.inf
-            for j in range(10000):
+            for j in range(5000): #(10000)
                 theta = self.problem.sample_from_prior()
                 ll = self.log_likelihood(theta)
                 if ll > self.max_ll: self.max_ll = ll
@@ -400,7 +400,6 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
             #y_obs, theta = self.convert_stat(self.whiten(self.y_obs)), theta
             #print(f"SNL LOGLIKE imgs: {self.img_obs.shape}")
             y_obs, theta = self.convert_stat(self.img_obs), theta
-            print(f"nde log like: {y_obs.device}")
             #y_obs = y_obs.float().to(self.device)
             #theta = torch.tensor(theta).float().view(1, -1).to(self.device)
             y_obs, theta = torch.tensor(y_obs).float(), torch.tensor(theta).float().view(1, -1)
