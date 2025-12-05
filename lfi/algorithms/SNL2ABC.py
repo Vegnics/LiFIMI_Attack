@@ -353,6 +353,7 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
             for _ in range(num_pilot):
                 theta = self.problem.sample_from_prior()
                 thetas_pilot.append(theta)
+            thetas_pilot = np.array(thetas_pilot)
             thetas_pilot = torch.tensor(thetas_pilot, dtype=torch.float32, device=device)  # (N, K)
 
             with torch.no_grad():
@@ -368,6 +369,7 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
             for _ in range(batch_size):
                 theta = self.problem.sample_from_prior()
                 thetas.append(theta)
+            thetas = np.array(theta)
             thetas = torch.tensor(thetas, dtype=torch.float32, device=device)  # (B, K)
 
             with torch.no_grad():
@@ -451,14 +453,6 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
                 self.all_stats = all_stats
                 self.all_samples = all_samples
             self.learn_stat() # Train the Stat Net with: (Raw images,thetas) 
-            self.stat_net.eval()
-            with torch.no_grad():
-                x0 = torch.tensor(self.problem.imgs_obs).float().to(self.device)
-                if x0.dim() == 3:   # (C,H,W)
-                    x0 = x0.unsqueeze(0)
-                elif x0.dim() == 1: # (D,)
-                    x0 = x0.unsqueeze(0)
-                self.s_obs = self.stat_net.encode(x0).squeeze(0)
             self.fit_nde() # Train the Neural Density Estimator p(theta|S(X_o))
             
             ### Just debugging the JSD discrepancy (comment if unnecessary)
