@@ -315,7 +315,6 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
         self.stat_net = net
         self.stat_array.append(net)
 
-    """
     def sample_from_nde(self):
         #print(">Sampling from NDE")
         net = self.nde_net
@@ -336,13 +335,9 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
             u = distributions.uniform.draw_samples(0, 1, 1)[0]
             if np.log(u) < prob_accept: break
         return theta
-    """
     
+    """
     def sample_from_nde(self, batch_size=512):
-        """
-        Draw a single theta ~ prior(θ) weighted by NDE likelihood, 
-        using batched rejection sampling.
-        """
         device = self.device
         net = self.nde_net.to(device).eval()
 
@@ -392,7 +387,7 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
                 idx = mask.nonzero(as_tuple=False)[0, 0]
                 theta_accept = thetas[idx].detach().cpu().numpy()
                 return theta_accept
-    
+    """
     
     def log_likelihood(self, theta, use_ratio=False):
         if not use_ratio:
