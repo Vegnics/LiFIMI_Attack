@@ -459,9 +459,9 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
             
             ### Just debugging the JSD discrepancy (comment if unnecessary)
             ### ----------------------------------------------------------------
-            true_samples = self.problem.sample_from_true_posterior()
-            JSD = discrepancy.JSD(self.problem.log_likelihood, self.log_likelihood, true_samples, true_samples, N_grid=30)
-            print(f"[DEBUG] -- JSD: {JSD}")
+            #true_samples = self.problem.sample_from_true_posterior()
+            #JSD = discrepancy.JSD(self.problem.log_likelihood, self.log_likelihood, true_samples, true_samples, N_grid=30)
+            #print(f"[DEBUG] -- JSD: {JSD}")
             ### ----------------------------------------------------------------
             
             stats_all   = np.vstack(self.all_stats)       # (N_total, ... flattened later inside learn_stat)
