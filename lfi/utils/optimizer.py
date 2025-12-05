@@ -6,6 +6,7 @@ import numpy as np
 import math
 import time
 from copy import deepcopy
+from lfi.statnet.statnets import ISN_img
 
 
 
@@ -44,7 +45,7 @@ class NNOptimizer(nn.Module):
         optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, net.parameters()), lr=net.lr, weight_decay=net.wd)
         n_batch, n_val_batch = int(len(x_train)/bs), int(len(x_val)/bs) if len(x_val) > bs else 1
         best_val_loss, best_model_state_dict, no_improvement = math.inf, None, 0
-                
+        mi_times = []
         for t in range(T):
             # shuffle the batch
             idx = torch.randperm(len(x_train)) 
@@ -54,13 +55,18 @@ class NNOptimizer(nn.Module):
 
             # gradient descend
             net.train()
+    
+            tstart = time_ns()
             for i in range(len(x_chunks)):
                 optimizer.zero_grad()
                 loss = -net.objective_func(x_chunks[i], y_chunks[i])
                 if t>0:
                     loss.backward()
                     optimizer.step()
-              
+            tstop = time_ns()
+            if isinstance(net,ISN_img):
+                mi_times.append(tstop-tstart)
+            
             # early stopping if val loss does not improve after some epochs
             net.eval()
             loss_val = torch.zeros(1, device=x.device)
@@ -75,7 +81,8 @@ class NNOptimizer(nn.Module):
             # report
             if PRINTING and t%(T//10) == 0: 
                print('finished: t=', t, 'loss=', loss.item(), 'loss val=', loss_val.item(), 'best loss', best_val_loss)
-                            
+        if isinstance(net,ISN_img):
+            net.mi_times = list(mi_times)                                
         # return the best snapshot in the history
         net.load_state_dict(best_model_state_dict)
         return best_val_loss

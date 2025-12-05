@@ -7,6 +7,7 @@ import scipy
 import math
 import time
 from copy import deepcopy
+from time import time_ns
 
 from lfi.utils import optimizer
 from lfi.statnet.baselayer import CriticLayer,ScoreLayer,EncodeLayer
@@ -189,12 +190,13 @@ class ISN_img(nn.Module):
         self.lr = 5e-4 if not hasattr(hyperparams, 'lr') else hyperparams.lr
         self.wd = 0e-5 if not hasattr(hyperparams, 'wd') else hyperparams.wd
         self.n_neg = 25 if not hasattr(hyperparams, 'n_neg') else hyperparams.n_neg
+        self.mi_times = None
         
         self.encode_y = True if not hasattr(hyperparams, 'encode_y') else hyperparams.encode_y
         self.encode_layer = EncodeLayer(architecture, dim_y, hyperparams) ### << Statistic net S
         self.encode2_layer = EncodeLayer([dim_y] + architecture[1:], dim_y, None) ## << Theta representation net H
         self.critic_layer = CriticLayer(architecture, 2*architecture[-1], hyperparams)
-    
+        self.csv_logger = None
     def encode(self, x): ## Statistic net S
         # s = s(x), get the summary statistic of x
         return self.encode_layer(x)
@@ -261,10 +263,16 @@ class ISN_img(nn.Module):
     
     def objective_func(self, x, y):
         ## Compute the mutual information I(X;Y)
-        ## Where X is the statistic and Y is theta 
-        return self.MI(x, y, n=self.n_neg)
+        ## Where X is the statistic and Y is theta
+        MI = self.MI(x, y, n=self.n_neg)
+        return MI
     
     def learn(self, x, y):
         loss_value = optimizer.NNOptimizer.learn(self, x, y)
+        with open(self.csv_logger, 'a', newline='') as file:
+            writer = csv.writer(file)
+            for t in self.mi_times:
+                    writer.writerow([t])
+            #writer.writerows(self.mi_times)
         return loss_value
 

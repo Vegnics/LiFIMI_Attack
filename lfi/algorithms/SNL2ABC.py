@@ -221,7 +221,12 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
         self.proposal_array = []                        # the proposal used at each round
         self.hyperparams = hyperparams
         self.sample_keep = 200
- 
+        
+        self.csv_logger = f"mi_times_{self.hyperparams.estimator}.csv"
+        
+        with open(self.csv_logger, mode='w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(["times"])
     def convert_stat(self, x): 
         # no autoencoder, directly return s
         if self.stat_net is None: 
@@ -301,6 +306,8 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
             print("> Loading StatNet weights ...")
             net.load_state_dict(deepcopy(self.stat_net.state_dict()))
         #print("Summary statistics arch: \n",net)
+        if self.hyperparams.stat == 'infomax':
+            net.csv_logger = self.csv_logger
         net.train().to(self.device)
         net.learn(x=all_stats, y=all_samples)
         net = net.eval().cpu()

@@ -161,12 +161,12 @@ def JSD(log_p, log_q, samples_P, samples_Q, N_grid=30):
     prob_q = np.zeros((N**dim, 1))
     for i in range(N**dim):
         sample = R[i]
-        prob_p[i] = log_p(sample) #np.exp(log_p(sample))
-        prob_q[i] = log_p(sample) #np.exp(log_q(sample))
-    prob_p -= prob_p.max()
-    prob_q -= prob_q.max()
-    prob_p = np.exp(prob_p)
-    prob_q = np.exp(prob_q)
+        prob_p[i] = np.exp(log_p(sample)) #log_p(sample) #
+        prob_q[i] = np.exp(log_q(sample)) #log_p(sample) #
+    #prob_p -= prob_p.max()
+    #prob_q -= prob_q.max()
+    #prob_p = np.exp(prob_p)
+    #prob_q = np.exp(prob_q)
     
     # Riemann integration for KL computation
     KL_PM = 0
