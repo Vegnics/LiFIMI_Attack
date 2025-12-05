@@ -456,6 +456,8 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
             self.learn_stat() # Train the Stat Net with: (Raw images,thetas) 
             self.fit_nde() # Train the Neural Density Estimator p(theta|S(X_o))
             
+            net = self.nde_net.to('cpu').eval()
+            
             ### Just debugging the JSD discrepancy (comment if unnecessary)
             ### ----------------------------------------------------------------
             true_samples = self.problem.sample_from_true_posterior()
