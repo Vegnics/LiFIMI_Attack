@@ -352,6 +352,7 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
             thetas_pilot = []
             for _ in range(num_pilot):
                 theta = self.problem.sample_from_prior()
+                theta = theta.reshape(1,-1)
                 thetas_pilot.append(theta)
             print(len(thetas_pilot),thetas_pilot[0].shape)
             thetas_pilot = np.concat(thetas_pilot,axis=0)
