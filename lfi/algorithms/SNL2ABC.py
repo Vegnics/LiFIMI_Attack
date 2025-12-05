@@ -357,6 +357,7 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
             thetas_pilot = torch.tensor(thetas_pilot, dtype=torch.float32, device=device)  # (N, K)
 
             with torch.no_grad():
+                print("sample_from_nde: ->> ",thetas_pilot.size())
                 ll_pilot = self.log_likelihood(thetas_pilot)  # (N,)
 
             self.max_ll = ll_pilot.max().item()
