@@ -227,6 +227,9 @@ class EncodeLayer(nn.Module):
         if self.type == 'cnnimg':
             ## Convert to channels first
             imgs = torch.transpose(x,-1,1).clone()
+            means = torch.mean(imgs,dim=[2,3],keepdim=True)
+            stds = torch.std(imgs,dim=[2,3],keepdim=True)
+            imgs = (imgs-means)/(stds+1e-6)
             #print(f"Front end: {x.size()} -> {imgs.size()}")
             x = self.cnnimg(imgs) 
         return x
