@@ -315,6 +315,7 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
         self.stat_net = net
         self.stat_array.append(net)
 
+    """
     def sample_from_nde(self):
         #print(">Sampling from NDE")
         net = self.nde_net
@@ -335,7 +336,58 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
             u = distributions.uniform.draw_samples(0, 1, 1)[0]
             if np.log(u) < prob_accept: break
         return theta
-        
+    """
+    
+    def sample_from_nde(self, batch_size=512):
+        """
+        Draw a single theta ~ prior(θ) weighted by NDE likelihood, 
+        using batched rejection sampling.
+        """
+        device = self.device
+        net = self.nde_net.to(device).eval()
+
+        # --- 1) Pilot run for max log-likelihood (once) ---
+        if self.max_ll is None:
+            num_pilot = 10000
+            thetas_pilot = []
+            for _ in range(num_pilot):
+                theta = self.problem.sample_from_prior()
+                thetas_pilot.append(theta)
+            thetas_pilot = torch.tensor(thetas_pilot, dtype=torch.float32, device=device)  # (N, K)
+
+            with torch.no_grad():
+                ll_pilot = self.log_likelihood(thetas_pilot)  # (N,)
+
+            self.max_ll = ll_pilot.max().item()
+            # optional: print("max_ll =", self.max_ll)
+
+        # --- 2) Batched rejection sampling ---
+        while True:
+            # sample a batch of candidates from prior
+            thetas = []
+            for _ in range(batch_size):
+                theta = self.problem.sample_from_prior()
+                thetas.append(theta)
+            thetas = torch.tensor(thetas, dtype=torch.float32, device=device)  # (B, K)
+
+            with torch.no_grad():
+                log_lik = self.log_likelihood(thetas)  # (B,)
+
+            # log-acceptance probs
+            log_accept = log_lik - self.max_ll   # (B,)
+
+            # sample uniforms in log-space
+            log_u = torch.log(torch.rand_like(log_accept))
+
+            # mask of accepted indices
+            mask = log_u < log_accept
+            if mask.any():
+                # pick first accepted sample
+                idx = mask.nonzero(as_tuple=False)[0, 0]
+                theta_accept = thetas[idx].detach().cpu().numpy()
+                return theta_accept
+    
+    
     def log_likelihood(self, theta, use_ratio=False):
         if not use_ratio:
             '''
@@ -346,7 +398,10 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
             #y_obs, theta = self.convert_stat(self.whiten(self.y_obs)), theta
             #print(f"SNL LOGLIKE imgs: {self.img_obs.shape}")
             y_obs, theta = self.convert_stat(self.img_obs), theta
-            y_obs, theta = torch.tensor(y_obs).float(), torch.tensor(theta).float().view(1, -1)
+            print(f"nde log like: {y_obs.device}")
+            y_obs = y_obs.float().to(self.device)
+            theta = torch.tensor(theta).float().view(1, -1).to(self.device)
+            #y_obs, theta = torch.tensor(y_obs).float(), torch.tensor(theta).float().view(1, -1)
             log_probs = net.log_probs(inputs=y_obs, cond_inputs=theta)
             return log_probs.item()
         else:
@@ -396,13 +451,21 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
                 self.all_stats = all_stats
                 self.all_samples = all_samples
             self.learn_stat() # Train the Stat Net with: (Raw images,thetas) 
+            self.stat_net.eval()
+            with torch.no_grad():
+                x0 = torch.tensor(self.problem.imgs_obs).float().to(self.device)
+                if x0.dim() == 3:   # (C,H,W)
+                    x0 = x0.unsqueeze(0)
+                elif x0.dim() == 1: # (D,)
+                    x0 = x0.unsqueeze(0)
+                self.s_obs = self.stat_net.encode(x0).squeeze(0)
             self.fit_nde() # Train the Neural Density Estimator p(theta|S(X_o))
             
             ### Just debugging the JSD discrepancy (comment if unnecessary)
             ### ----------------------------------------------------------------
-            #true_samples = self.problem.sample_from_true_posterior()
-            #JSD = discrepancy.JSD(self.problem.log_likelihood, self.log_likelihood, true_samples, true_samples, N_grid=30)
-            #print(f"[DEBUG] -- JSD: {JSD}")
+            true_samples = self.problem.sample_from_true_posterior()
+            JSD = discrepancy.JSD(self.problem.log_likelihood, self.log_likelihood, true_samples, true_samples, N_grid=30)
+            print(f"[DEBUG] -- JSD: {JSD}")
             ### ----------------------------------------------------------------
             
             stats_all   = np.vstack(self.all_stats)       # (N_total, ... flattened later inside learn_stat)
