@@ -397,6 +397,7 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
             '''
             net = self.nde_net
             net.eval()
+            net_dev = device = next(net.parameters()).device
             #y_obs, theta = self.convert_stat(self.whiten(self.y_obs)), theta
             #print(f"SNL LOGLIKE imgs: {self.img_obs.shape}")
             y_obs, theta = self.convert_stat(self.img_obs), theta
@@ -404,7 +405,7 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
             #y_obs = y_obs.float().to(self.device)
             #theta = torch.tensor(theta).float().view(1, -1).to(self.device)
             y_obs, theta = torch.tensor(y_obs).float(), torch.tensor(theta).float().view(1, -1)
-            y_obs, theta = y_obs.to(self.device),theta.to(self.device)
+            y_obs, theta = y_obs.to(net_dev),theta.to(net_dev)
             log_probs = net.log_probs(inputs=y_obs, cond_inputs=theta)
             return log_probs.item()
         else:
