@@ -13,6 +13,7 @@ from lfi.utils import discrepancy
 from lfi.algorithms import ABC_algorithms
 from lfi.statnet.statnets import ISN, MSN, SSN , ISN_img
 from lfi.neuralde import MAF, MDN
+import csv
 
 
 
@@ -396,6 +397,12 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
                 self.all_samples = all_samples
             self.learn_stat() # Train the Stat Net with: (Raw images,thetas) 
             self.fit_nde() # Train the Neural Density Estimator p(theta|S(X_o))
+            
+            ### Just debugging the JSD discrepancy
+            true_samples = self.problem.sample_from_true_posterior()
+            JSD = discrepancy.JSD(self.problem.log_likelihood, self.log_likelihood, true_samples, true_samples, N_grid=30)
+            print(f"[DEBUG] -- JSD: {JSD}")
+            
             stats_all   = np.vstack(self.all_stats)       # (N_total, ... flattened later inside learn_stat)
             samples_all = np.vstack(self.all_samples)     # (N_total, K)
 

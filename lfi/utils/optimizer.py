@@ -6,8 +6,7 @@ import numpy as np
 import math
 import time
 from copy import deepcopy
-from lfi.statnet.statnets import ISN_img
-
+from time import time_ns
 
 
 class NNOptimizer(nn.Module):
@@ -32,7 +31,7 @@ class NNOptimizer(nn.Module):
         T = 2000 if not hasattr(net, 'max_iteration') else net.max_iteration
         print(f"Optimizer max_iter: {T}")
         PRINTING = True if not hasattr(net, 'trace_learning') else net.trace_learning   
-        T_NO_IMPROVE_THRESHOLD = 800
+        T_NO_IMPROVE_THRESHOLD = 450#800
         
         # divide train & val 
         n = len(x)
@@ -64,7 +63,7 @@ class NNOptimizer(nn.Module):
                     loss.backward()
                     optimizer.step()
             tstop = time_ns()
-            if isinstance(net,ISN_img):
+            if hasattr(net,"csv_logger"):
                 mi_times.append(tstop-tstart)
             
             # early stopping if val loss does not improve after some epochs
@@ -81,7 +80,7 @@ class NNOptimizer(nn.Module):
             # report
             if PRINTING and t%(T//10) == 0: 
                print('finished: t=', t, 'loss=', loss.item(), 'loss val=', loss_val.item(), 'best loss', best_val_loss)
-        if isinstance(net,ISN_img):
+        if hasattr(net,"csv_logger"):
             net.mi_times = list(mi_times)                                
         # return the best snapshot in the history
         net.load_state_dict(best_model_state_dict)
