@@ -401,9 +401,9 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
             #print(f"SNL LOGLIKE imgs: {self.img_obs.shape}")
             y_obs, theta = self.convert_stat(self.img_obs), theta
             print(f"nde log like: {y_obs.device}")
-            y_obs = y_obs.float().to(self.device)
-            theta = torch.tensor(theta).float().view(1, -1).to(self.device)
-            #y_obs, theta = torch.tensor(y_obs).float(), torch.tensor(theta).float().view(1, -1)
+            #y_obs = y_obs.float().to(self.device)
+            #theta = torch.tensor(theta).float().view(1, -1).to(self.device)
+            y_obs, theta = torch.tensor(y_obs).float(), torch.tensor(theta).float().view(1, -1)
             log_probs = net.log_probs(inputs=y_obs, cond_inputs=theta)
             return log_probs.item()
         else:
