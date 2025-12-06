@@ -235,7 +235,11 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
             return s #torch.tensor(x).float()#s
         # convert raw data to summary stat: s = S(x)
         else:
-            s = self.stat_net.encode(torch.tensor(x).float())
+            statnet = self.stat_net.to(self.device)
+            x = torch.tensor(x).float().to(self.device)
+            with torch.no_grad():
+                s = statnet.encode(torch.tensor(x).float())
+            #s = self.stat_net.encode(torch.tensor(x).float())
             return s.detach().cpu().numpy()
         #x = torch.tensor(x).float().to(self.device)
         #with torch.no_grad():
@@ -411,6 +415,7 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
 
             # Device of the NDE
             net_dev = next(net.parameters()).device
+            print(f"NetDev:::: {net_dev}")
             # Get summary statistic of observed image (single vector)
             s_obs = self.convert_stat(self.img_obs)  # numpy or tensor
             s_obs = torch.as_tensor(s_obs, dtype=torch.float32)
@@ -508,7 +513,7 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
             self.learn_stat() # Train the Stat Net with: (Raw images,thetas) 
             self.fit_nde() # Train the Neural Density Estimator p(theta|S(X_o))
             
-            net = self.nde_net.to('cpu').eval()
+            #net = self.nde_net.to('cpu').eval()
             
             ### Just debugging the JSD discrepancy (comment if unnecessary)
             ### ----------------------------------------------------------------
