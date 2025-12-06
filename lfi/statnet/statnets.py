@@ -252,8 +252,8 @@ class ISN_img(nn.Module):
             mi = f_pos.mean() - f_neg.exp().mean().log()
         # [D]. Wasserstein dependency measure (WPC, NIPS'19)
         if self.estimator == 'WD':
-            z, y = self.encode(z), self.encode2(y)
             m,_,_,_ = z.size()
+            z, y = self.encode(z), self.encode2(y)
             #m, d, K = z.size()[0], z.size()[1], y.size()[1] 
             idx_pos = []
             idx_neg = []
