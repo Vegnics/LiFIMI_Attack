@@ -31,7 +31,7 @@ class NNOptimizer(nn.Module):
         T = 1200 if not hasattr(net, 'stat_max_iter') else net.stat_max_iter#2000 
         print(f"Optimizer max_iter: {T}")
         PRINTING = True if not hasattr(net, 'trace_learning') else net.trace_learning   
-        T_NO_IMPROVE_THRESHOLD = 450#800
+        T_NO_IMPROVE_THRESHOLD = 250#450#800
         
         # divide train & val 
         n = len(x)

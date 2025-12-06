@@ -415,7 +415,6 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
 
             # Device of the NDE
             net_dev = next(net.parameters()).device
-            print(f"NetDev:::: {net_dev}")
             # Get summary statistic of observed image (single vector)
             s_obs = self.convert_stat(self.img_obs)  # numpy or tensor
             s_obs = torch.as_tensor(s_obs, dtype=torch.float32)
