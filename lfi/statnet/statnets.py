@@ -193,6 +193,7 @@ class ISN_img(nn.Module):
         self.wd = 0e-5 if not hasattr(hyperparams, 'wd') else hyperparams.wd
         self.n_neg = 25 if not hasattr(hyperparams, 'n_neg') else hyperparams.n_neg
         self.mi_times = None
+        self.max_iter = 1200 if not hasattr(hyperparams, 'stat_max_iter') else hyperparams.stat_max_iter
         
         self.encode_y = True if not hasattr(hyperparams, 'encode_y') else hyperparams.encode_y
         self.encode_layer = EncodeLayer(architecture, dim_y, hyperparams) ### << Statistic net S

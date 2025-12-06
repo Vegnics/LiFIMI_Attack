@@ -259,8 +259,11 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
         #all_samples = torch.tensor(np.vstack(self.all_samples[0:self.l+1])).float().to(self.device)
         [n, dim] = all_stats.size()
         print('all_stats.size()', all_stats.size())
+        bs = self.hyperparams.nde_bs
+        lr = self.hyperparams.nde_lr 
         if self.hyperparams.nde == 'MAF':
-            net = MAF.MAF(n_blocks=5, n_inputs=dim, n_hidden=50, n_cond_inputs=self.problem.K,bs=32,lr=5e-5)
+            #net = MAF.MAF(n_blocks=5, n_inputs=dim, n_hidden=50, n_cond_inputs=self.problem.K,bs=32,lr=5e-5)
+            net = MAF.MAF(n_blocks=5, n_inputs=dim, n_hidden=50, n_cond_inputs=self.problem.K,bs=bs,lr=lr)
         if self.hyperparams.nde == 'MDN':
             net = MDN.MDN(n_in=self.problem.K, n_hidden=50, n_out=dim, K=8)
         if self.nde_net is not None:
