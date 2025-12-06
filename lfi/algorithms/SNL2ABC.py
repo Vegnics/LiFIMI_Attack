@@ -348,7 +348,7 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
 
         # --- 1) Pilot run for max log-likelihood (once) ---
         if self.max_ll is None:
-            num_pilot = 10000
+            num_pilot = 6000
             thetas_pilot = []
             for _ in range(num_pilot):
                 theta = self.problem.sample_from_prior()
@@ -361,7 +361,7 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
 
             with torch.no_grad():
                 print("sample_from_nde: ->> ",thetas_pilot.size())
-                ll_pilot = self.log_likelihood(thetas_pilot)  # (N,)
+                ll_pilot = self.log_likelihood_batch(thetas_pilot)  # (N,)
 
             self.max_ll = ll_pilot.max().item()
             # optional: print("max_ll =", self.max_ll)
@@ -372,12 +372,13 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
             thetas = []
             for _ in range(batch_size):
                 theta = self.problem.sample_from_prior()
+                theta = theta.reshape(1,-1)
                 thetas.append(theta)
-            thetas = np.array(theta)
+            thetas = np.concat(thetas,axis=0)
             thetas = torch.tensor(thetas, dtype=torch.float32, device=device)  # (B, K)
 
             with torch.no_grad():
-                log_lik = self.log_likelihood(thetas)  # (B,)
+                log_lik = self.log_likelihood_batch(thetas)  # (B,)
 
             # log-acceptance probs
             log_accept = log_lik - self.max_ll   # (B,)
@@ -393,6 +394,53 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
                 theta_accept = thetas[idx].detach().cpu().numpy()
                 return theta_accept
     #"""
+    
+    def log_likelihood_batch(self, theta, use_ratio=False):
+        """
+        Compute log p(theta | x_o) for a batch of thetas.
+        """
+        # Convert theta to tensor and ensure batch dimension
+        theta = torch.as_tensor(theta, dtype=torch.float32)
+        if theta.dim() == 1:
+            theta = theta.unsqueeze(0)   # (1, K)
+        B = theta.size(0)
+
+        if not use_ratio:
+            net = self.nde_net
+            net.eval()
+
+            # Device of the NDE
+            net_dev = next(net.parameters()).device
+            # Get summary statistic of observed image (single vector)
+            s_obs = self.convert_stat(self.img_obs)  # numpy or tensor
+            s_obs = torch.as_tensor(s_obs, dtype=torch.float32)
+            s_obs = s_obs.to(net_dev)
+
+            #if s_obs.dim() == 1:
+            #    s_obs = s_obs.unsqueeze(0)
+            #s_obs = s_obs.expand(B, -1).to(net_dev)
+            theta = theta.to(net_dev)
+            out = torch.empty(B, device=net_dev)
+            with torch.no_grad():
+                for i in range(B):
+                    thetai = theta[i].unsqueeze(0).to(net_dev)   # (1, K)
+                    li = net.log_probs(inputs=s_obs, cond_inputs=thetai)  # scalar
+                    out[i] = li
+            # Return as 1D CPU tensor
+            return out.cpu()
+
+        else:
+            # log p(theta | x_o) = log r(x_o, theta) + C(x_o)
+            net = self.stat_net
+            net.eval()
+            # Device of the StatNet
+            net_dev = next(net.parameters()).device
+            y_obs = torch.as_tensor(self.img_obs, dtype=torch.float32)
+            theta = theta.to(net_dev)
+            with torch.no_grad():
+                # Assume stat_net.log_likelihood supports batched input
+                log_probs = net.log_likelihood(y_obs, theta)  # (B,) or (B,1)
+            return log_probs.view(-1).cpu()
     
     def log_likelihood(self, theta, use_ratio=False):
         if not use_ratio:
