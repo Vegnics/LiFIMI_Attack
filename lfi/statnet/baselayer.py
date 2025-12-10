@@ -203,8 +203,15 @@ class EncodeLayer(nn.Module):
         self.drop = nn.Dropout(p=0.20)
         if self.type == 'cnnimg':
             self.out = nn.Sequential(
+                nn.Linear(architecture[-2], 16, bias=True),
+                nn.ReLU(inplace=True),
+                nn.Linear(16, 5*architecture[-1], bias=True),
+            )
+            """
+            self.out = nn.Sequential(
                 nn.Linear(architecture[-2], 5*architecture[-1], bias=True),
             )
+            """
         else:
             self.out = nn.Sequential(
                 nn.Linear(architecture[-2], 2*architecture[-1], bias=True),
