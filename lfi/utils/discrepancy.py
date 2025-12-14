@@ -171,8 +171,8 @@ def JSD(log_p, log_q, samples_P, samples_Q, N_grid=30):
     # Riemann integration for KL computation
     KL_PM = 0
     KL_QM = 0
-    prob_p = prob_p/(sum(prob_p))
-    prob_q = prob_q/(sum(prob_q))
+    prob_p = prob_p/(np.sum(prob_p))
+    prob_q = prob_q/(np.sum(prob_q))
     prob_pq = (prob_p + prob_q)/2
     for i in range(N**dim):
         if prob_p[i] < 1e-20:

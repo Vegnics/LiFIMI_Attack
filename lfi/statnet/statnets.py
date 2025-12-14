@@ -32,8 +32,8 @@ class ISN(nn.Module):
         self.encode_y = True if not hasattr(hyperparams, 'encode_y') else hyperparams.encode_y
         self.encode_layer = EncodeLayer(architecture, dim_y, hyperparams) ### << Statistic net S
         self.encode2_layer = EncodeLayer([dim_y] + architecture[1:], dim_y, None) ## << Theta representation net H
-        self.critic_layer = CriticLayer(architecture, architecture[-1], hyperparams)
-        
+        #self.critic_layer = CriticLayer(architecture, architecture[-1], hyperparams)
+        self.critic_layer = CriticLayer(architecture, 2*architecture[-1], hyperparams)
     
     def encode(self, x): ## Statistic net S
         # s = s(x), get the summary statistic of x

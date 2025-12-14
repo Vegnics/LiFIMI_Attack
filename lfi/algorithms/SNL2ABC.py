@@ -75,6 +75,7 @@ class SNL2_ABC(ABC_algorithms.Base_ABC):
         if self.hyperparams.nde == 'MDN':
             net = MDN.MDN(n_in=self.problem.K, n_hidden=50, n_out=dim, K=8)
         if self.nde_net is not None:
+            print("> Loading NDENet weights ...")
             net.load_state_dict(deepcopy(self.nde_net.state_dict()))
         net.train().to(self.device)
         net.learn(inputs=all_stats, cond_inputs=all_samples)
@@ -90,7 +91,7 @@ class SNL2_ABC(ABC_algorithms.Base_ABC):
         h = self.problem.K*2
         print('summary statistic dim =', h, 'original dim =', dim)
         #architecture = [dim] + [100, 100, h]
-        architecture = [dim] + [100, 150,100, h]    
+        architecture = [dim] + [100, 100,100, h]    
         print('architecture', architecture)
         if self.hyperparams.stat == 'infomax':
             net = ISN(architecture, dim_y=self.problem.K, hyperparams=self.hyperparams)
@@ -99,6 +100,7 @@ class SNL2_ABC(ABC_algorithms.Base_ABC):
         if self.hyperparams.stat == 'score':
             net = SSN(architecture, dim_y=self.problem.K, hyperparams=self.hyperparams)
         if self.stat_net is not None:
+            print("> Loading StatNet weights ...")
             net.load_state_dict(deepcopy(self.stat_net.state_dict()))
         net.train().to(self.device)
         net.learn(x=all_stats, y=all_samples)

@@ -104,6 +104,8 @@ class EncodeLayer(nn.Module):
         print(f"Out front end: {architecture[1]}")
         if self.type == 'plain':
             self.plain = nn.Linear(architecture[0], architecture[1], bias=True)
+        if self.type == 'plain2':
+            self.plain = nn.Linear(architecture[0], architecture[1], bias=True)
         if self.type == 'iid':
             self.enn = nn.Sequential(
                  nn.Conv1d(in_channels=1, out_channels=50, kernel_size=1, stride=1),
@@ -192,7 +194,7 @@ class EncodeLayer(nn.Module):
             )
             
         self.drop = nn.Dropout(p=0.20)
-        if self.type == 'cnnimg':
+        if self.type == 'cnnimg' or self.type == 'plain2':
             self.out = nn.Sequential(
                 nn.Linear(architecture[-2], 5*architecture[-1], bias=True),
             )
@@ -223,6 +225,8 @@ class EncodeLayer(nn.Module):
             x = self.cnn2d(x)    # n*k
         # default
         if self.type == 'plain':
+            x = self.plain(x)
+        if self.type == 'plain2':
             x = self.plain(x)
         if self.type == 'cnnimg':
             ## Convert to channels first
