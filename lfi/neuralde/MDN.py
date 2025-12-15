@@ -13,10 +13,10 @@ class MDN(nn.Module):
     """ 
         Mixture density network 
     """
-    def __init__(self, n_in, n_hidden, n_out, K=1):
+    def __init__(self, n_in, n_hidden, n_out, K=1,bs=200,lr=5e-4):
         super(MDN, self).__init__()
-        self.bs = 400
-        self.lr = 5e-4
+        self.bs = bs
+        self.lr = lr
         self.wd = 1e-5
         self.main = nn.Sequential(
             nn.Linear(n_in, n_hidden),
@@ -76,7 +76,7 @@ class MDN(nn.Module):
         return (prob + 1e-12).log()
     
     def objective_func(self, inputs, cond_inputs):
-        return self.log_probs(inputs, cond_inputs)
+        return self.log_probs(inputs, cond_inputs).mean()
     
     def learn(self, inputs, cond_inputs):
         loss_value = optimizer.NNOptimizer.learn(self, inputs, cond_inputs)

@@ -271,7 +271,7 @@ class SNL2_ABC_Image(ABC_algorithms.Base_ABC_Image):
             #net = MAF.MAF(n_blocks=5, n_inputs=dim, n_hidden=50, n_cond_inputs=self.problem.K,bs=32,lr=5e-5)
             net = MAF.MAF(n_blocks=5, n_inputs=dim, n_hidden=50, n_cond_inputs=self.problem.K,bs=bs,lr=lr)
         if self.hyperparams.nde == 'MDN':
-            net = MDN.MDN(n_in=self.problem.K, n_hidden=50, n_out=dim, K=8)
+            net = MDN.MDN(n_in=self.problem.K, n_hidden=50, n_out=dim, K=8,bs=bs,lr=lr)
         if self.nde_net is not None:
             print("> Loading NDENet weights ...")
             net.load_state_dict(deepcopy(self.nde_net.state_dict()))
