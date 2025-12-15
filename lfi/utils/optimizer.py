@@ -61,6 +61,10 @@ class NNOptimizer(nn.Module):
                 loss = -net.objective_func(x_chunks[i], y_chunks[i])
                 if t>0:
                     loss.backward()
+                    # --- Apply Gradient Clipping ---
+                    if hasattr(net,"ngrad_clip"):
+                        nn.utils.clip_grad_norm_(net.parameters(), max_norm=net.ngrad_clip)               
+    
                     optimizer.step()
             tstop = time_ns()
             if hasattr(net,"csv_logger"):

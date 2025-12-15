@@ -263,7 +263,7 @@ class FFD_Image_Problem(ABC_problems.ABC_Problem):
         """
         theta0 = float(theta[0])          # mean parameter
         var    = float(theta[1])          # variance parameter
-        var    = max(var, 1e-6)           # avoid degeneracy
+        var    = max(var, 1e-8)           # avoid degeneracy
 
         mu_obs = self.data_obs              # shape (N, D)
         N, D   = mu_obs.shape
@@ -291,8 +291,9 @@ class FFD_Image_Problem(ABC_problems.ABC_Problem):
         output : float
             The likelihood value L(theta)
         '''
+        """
         var = float(theta[1])
-        var = max(var, 1e-6)   # avoid degenerate var
+        var = max(var, 1e-8)   # avoid degenerate var
 
         mean_full = theta[0] * np.ones(self.mudim)      # (72,)
         W = self.pca_basis                               # (72, n_components)
@@ -303,6 +304,20 @@ class FFD_Image_Problem(ABC_problems.ABC_Problem):
         pdf_vals = distributions.normal_nd.pdf(Z, mu_pca, cov_pca)
         # Log-likelihood
         ll = np.log(pdf_vals + 1e-12)
+        """
+        theta0 = float(theta[0])          # mean parameter
+        var    = float(theta[1])          # variance parameter
+        var    = max(var, 1e-8)           # avoid degeneracy
+
+        mu_obs = self.data_obs              # shape (N, D)
+        N, D   = mu_obs.shape
+
+        # Mean vector is theta0 * 1; broadcast theta0
+        diff = mu_obs - theta0            # (N, D)
+        sq_norm = np.sum(diff**2, axis=1) # (N,)
+
+        # Per-sample log pdf of N(theta0*1, var*I_D)
+        ll = -0.5 * D * np.log(2 * np.pi * var) - 0.5 * sq_norm / var  # (N,)
         return ll
 
     def sample_from_prior(self):
