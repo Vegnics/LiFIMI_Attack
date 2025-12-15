@@ -34,6 +34,7 @@ class FFD_Image_Problem(ABC_problems.ABC_Problem):
         self.img_folder = image_folder
         self.out_img_folder = out_folder
         self.ctrl_pnts = 6
+        self.ffd_scale = 1.0
     
     def get_true_theta(self):
         return np.array([self.true_mean, self.true_var])
@@ -168,8 +169,10 @@ class FFD_Image_Problem(ABC_problems.ABC_Problem):
         var = theta[1]
         cov = np.diag(var*np.ones(self.mudim))
         nmean = mean*np.ones(self.mudim)
+        FFD_K = self.ffd_scale
+        
         MU = distributions.normal_nd.draw_samples(nmean,cov,self.n)
-        return MU
+        return MU*FFD_K
     
     def compute_pca(self, n_components=3):
         """
