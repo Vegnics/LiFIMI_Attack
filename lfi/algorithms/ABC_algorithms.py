@@ -188,6 +188,40 @@ class Base_ABC(object):
         N_proc = 4                                     
         num_budget_per_proc = int(self.num_sim/N_proc)
         num_samples_per_proc = int(self.num_sim/N_proc)                                                                                                                                                                                
+        
+        cnt = 0
+        for i in range(self.num_sim):
+            while True:
+                cnt +=1
+                # Sample from the prior distribution
+                theta = self.prior()  #<<<<< Sampling
+                if cnt%100==0:
+                    print(f"Rejection Sampling {cnt}, theta: {theta}")
+                # Throw away bad thetas
+                if self.is_valid_theta(theta) is False: continue
+
+                # Get summary statistics
+                data = self.problem.simulator(theta)  #<<<< Simulation (Warped images generation)
+                if data is None: continue
+                
+                ## The problem statistics should receive mus and images
+                y = self.problem.statistics(data=data, theta=theta)  #<<<< Return the raw warped images
+                ## "statistics" returns mu and warped image
+                # Whitening stat
+                y, y_obs = self.whiten(y), self.whiten(self.y_obs)
+                # Calculate error
+                error = self.discrepancy(y_obs, y) 
+                #print(statss.shape,y.shape)
+                # Collect samples & discrepancies
+                self.stats[i, :] = y  ## It should return the images
+                self.samples[i, :] = theta      ## It should return the sampled thetas
+                self.discrepancies.append(error) ## Discrepancies between sampled
+                                            ##thetas and observed thetas
+                break
+            if i % (int(self.num_sim/10)) == 0 and i>=1:
+                print('[sampling] finished sampling ', i)
+        
+        """
         for k in range(N_proc): params.append([num_budget_per_proc, num_samples_per_proc, k])
         func = self._simulate
         rets = uos.run_in_parallel(func, params, N_proc)
@@ -200,6 +234,7 @@ class Base_ABC(object):
             self.samples[k*n:(k+1)*n, :] = samples
             self.stats[k*n:(k+1)*n, :] = statss
             self.discrepancies += discrepancies
+        """
             
     def _simulate(self, param):
 
