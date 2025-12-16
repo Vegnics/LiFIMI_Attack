@@ -59,6 +59,7 @@ class MDN(nn.Module):
             samples.append(x)
         return torch.cat(samples, dim=0)
             
+    """
     def log_probs(self, inputs, cond_inputs):
         # pdf = \sum coeff[k] * N(x; mu[k], cov[k])
         coeff, mu_array, C_array, log_det_array = self.forward(cond_inputs)
@@ -73,8 +74,29 @@ class MDN(nn.Module):
             log_base_prob = normal.log_prob(z).sum(dim=1)
             log_prob = log_base_prob + log_det
             prob += coeff[:,k] * log_prob.exp() 
-        return (prob + 1e-12).log()
-    
+        return (prob + 1e-16).log()
+    """
+    def log_probs(self, inputs, cond_inputs):
+        coeff, mu_array, C_array, log_det_array = self.forward(cond_inputs)
+
+        # enforce valid mixture weights
+        log_coeff = (coeff + 1e-12).log()  # or better: have forward return logits and do log_softmax
+
+        # collect component log-probs: shape [B, K]
+        comps = []
+        for k in range(self.K):
+            mu, C, log_det = mu_array[k], C_array[k], log_det_array[k]
+
+            z = (inputs - mu).unsqueeze(1)          # [B,1,D]
+            z = z.bmm(C.transpose(1, 2)).squeeze(1) # [B,D]
+
+            log_base = (-0.5 * (z ** 2) - 0.5 * torch.log(torch.tensor(2.0 * torch.pi, device=z.device))).sum(dim=1)
+            log_pk = log_base + log_det             # <-- ensure log_det matches your transform convention
+
+            comps.append(log_coeff[:, k] + log_pk)
+
+        comps = torch.stack(comps, dim=1)           # [B,K]
+        return torch.logsumexp(comps, dim=1)        # [B]
     def objective_func(self, inputs, cond_inputs):
         return self.log_probs(inputs, cond_inputs).mean()
     
