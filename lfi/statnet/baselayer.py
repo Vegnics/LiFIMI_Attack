@@ -228,9 +228,9 @@ class EncodeLayer(nn.Module):
             x = self.plain(x)
         if self.type == 'plain2':
             #x = self.plain(x)
-            means = torch.mean(x,dim=-1,keepdim=True)
-            stds = torch.std(x,dim=-1,keepdim=True)
-            x = (x-means)/(stds+1e-6)
+            #means = torch.mean(x,dim=-1,keepdim=True)
+            #stds = torch.std(x,dim=-1,keepdim=True)
+            #x = (x-means)/(stds+1e-6)
             x = self.plain(x)
         if self.type == 'cnnimg':
             ## Convert to channels first
