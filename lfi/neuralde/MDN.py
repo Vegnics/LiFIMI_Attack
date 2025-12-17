@@ -48,10 +48,12 @@ class MDN(nn.Module):
     def sample(self, cond_inputs, n=1):
         device = cond_inputs.device
         coeff, mu_array, C_array, log_det_array = self.forward(cond_inputs)
+        coeff = torch.softmax(coeff,dim=1)
         categorical = distribution.Categorical(coeff)
         samples = []
         for i in range(n):
             k = categorical.sample()    # pick a component
+            assert k.shape[0] == 1, print("Batch ===>> 1")
             mu, C = mu_array[k][0], C_array[k][0].inverse()
             V = C.mm(C.t())
             normal = distribution.MultivariateNormal(mu, V)
@@ -76,11 +78,12 @@ class MDN(nn.Module):
             prob += coeff[:,k] * log_prob.exp() 
         return (prob + 1e-16).log()
     """
+    
     def log_probs(self, inputs, cond_inputs):
         coeff, mu_array, C_array, log_det_array = self.forward(cond_inputs)
-
+        log_coeff = torch.log_softmax(coeff,dim=1)
         # enforce valid mixture weights
-        log_coeff = (coeff + 1e-12).log()  # or better: have forward return logits and do log_softmax
+        #log_coeff = (coeff + 1e-12).log()  # or better: have forward return logits and do log_softmax
 
         # collect component log-probs: shape [B, K]
         comps = []
@@ -97,6 +100,7 @@ class MDN(nn.Module):
 
         comps = torch.stack(comps, dim=1)           # [B,K]
         return torch.logsumexp(comps, dim=1)        # [B]
+    
     def objective_func(self, inputs, cond_inputs):
         return self.log_probs(inputs, cond_inputs).mean()
     
@@ -116,9 +120,9 @@ class CoeffLayer(nn.Module):
     def forward(self, h):
         m, d = h.size()
         out = self.linear(h)
-        s = out.exp()
-        coeff = s/s.sum(dim=1, keepdim=True) 
-        return coeff
+        #s = out.exp()
+        #coeff = s/s.sum(dim=1, keepdim=True) 
+        return out #coeff
     
         
 class MeanLayer(nn.Module): 
