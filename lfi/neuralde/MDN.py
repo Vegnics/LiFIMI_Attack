@@ -44,7 +44,37 @@ class MDN(nn.Module):
             log_det_array.append(log_det)
         coeff = self.coeff_layer(h)
         return coeff, mu_array, C_array, log_det_array
-    
+
+    def sample(self, cond_inputs, n=1):
+        device = cond_inputs.device
+        coeff, mu_array, C_array, log_det_array = self.forward(cond_inputs)
+
+        coeff = torch.softmax(coeff, dim=1)
+        categorical = torch.distributions.Categorical(probs=coeff)
+
+        mu_stack = torch.stack(mu_array, dim=0)   # [K,B,D]
+        C_stack  = torch.stack(C_array, dim=0)    # [K,B,D,D]
+
+        B = cond_inputs.size(0)
+        samples = []
+
+        for _ in range(n):
+            k = categorical.sample()              # [B]
+            batch_idx = torch.arange(B, device=device)
+
+            mu = mu_stack[k, batch_idx]           # [B,D]
+            C0 = C_stack[k, batch_idx]             # [B,D,D]
+
+            I = torch.eye(self.dim, device=device, dtype=C0.dtype)
+            Cinv = torch.linalg.solve(C0, I)       # batch-wise solve
+            V = Cinv @ Cinv.transpose(-1, -2)      # [B,D,D]
+
+            normal = torch.distributions.MultivariateNormal(mu, V)
+            samples.append(normal.sample())        # [B,D]
+
+        return torch.cat(samples, dim=0)           # [n*B, D]
+
+    """
     def sample(self, cond_inputs, n=1):
         device = cond_inputs.device
         coeff, mu_array, C_array, log_det_array = self.forward(cond_inputs)
@@ -60,6 +90,7 @@ class MDN(nn.Module):
             x = normal.sample()        
             samples.append(x)
         return torch.cat(samples, dim=0)
+    """
             
     """
     def log_probs(self, inputs, cond_inputs):
