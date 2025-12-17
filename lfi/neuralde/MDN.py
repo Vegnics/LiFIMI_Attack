@@ -187,11 +187,20 @@ class CovLayer(nn.Module):
     def forward(self, h):
         n, d = h.size()
         out = self.linear(h)
+        eps =  1e-4
+        scale = 10.0
         out = out.view(n, self.n_out, self.n_out)
         ltri_mask, diag_mask = self.mask(h)
-        ltri, diag = out*ltri_mask, (out.exp()*diag_mask)
-        C = ltri + diag                    
-        log_det = (out*diag_mask).sum(dim=2).sum(dim=1)
+        #out_diag = F.softplus(out) + eps          # best default
+        #out_diag = torch.exp(torch.clamp(out, -10, 10))
+        #out_diag = torch.sigmoid(out) * scale + eps
+        diag_pos = F.softplus(out) + eps
+        ltri, diag = out*ltri_mask, (diag_pos*diag_mask)
+        C = ltri + diag
+        #log_det  = torch.log(diag).sum(dim=2).sum(dim=1)
+        diag_vec = torch.diagonal(diag_pos, dim1=1, dim2=2)  # [B, D]
+        log_det = torch.log(diag_vec).sum(dim=1)             # [B]
+        #log_det = (out*diag_mask).sum(dim=2).sum(dim=1)
         return C, log_det   # x = C^{-1}z, z = Cx, det|C| = -det|dx/dz|  C^{-1}C^{-T} = Sigma
     
     
