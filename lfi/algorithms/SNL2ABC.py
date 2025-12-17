@@ -179,6 +179,15 @@ class SNL2_ABC(ABC_algorithms.Base_ABC):
                 self.all_samples = all_samples
             self.learn_stat()
             self.fit_nde()
+            
+            stats_all   = np.vstack(self.all_stats)       # (N_total, ... flattened later inside learn_stat)
+            samples_all = np.vstack(self.all_samples)     # (N_total, K)
+            N_total = stats_all.shape[0]
+            idx = np.random.choice(N_total, size=N_total, replace=False)
+
+            self.all_stats   = [stats_all[idx]]
+            self.all_samples = [samples_all[idx]]
+            
             self.prior = self.sample_from_nde
             print('\n')
         self.num_sim = total_num_sim
